@@ -1,0 +1,3332 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0c0a">
+  <meta name="description" content="Calculadora de RPM y avance para fresas, brocas y machos.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; style-src 'sha256-iu2uZUrigm9cbmCwoS7gkNyfuB4MN4+Hli85XbglTcg='; script-src 'sha256-+3dFFW2WmQYniKiMxyaeIdjYVZDYn0t1zRVzHYDiKN0='; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>CNC</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+/* CNC — estilos. Todos los colores son variables: para rediseñar se cambia este bloque. */
+:root {
+  --bg: #0b0c0a; --card: #161814; --card2: #1c1f19; --borde: #2a2e26; --linea: #20231d;
+  --txt: #f1f3ec; --mut: #8d9386; --lima: #c8e05a; --lima2: #9fb83a;
+  --ambar: #f2b33d; --rojo: #ff7a6b; --radio: 18px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-feature-settings: "calt" 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); }
+body {
+  color: var(--txt); font: 15px/1.35 "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100dvh; padding-bottom: calc(90px + env(safe-area-inset-bottom));
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; }
+input, select { background: transparent; border: 0; outline: 0; width: 100%; }
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+:focus-visible { outline: 2px solid var(--lima); outline-offset: 2px; }
+svg.i { width: 22px; height: 22px; flex-shrink: 0; }
+[hidden] { display: none !important; }
+
+main { max-width: 520px; margin: 0 auto; padding: calc(14px + env(safe-area-inset-top)) 18px 0; }
+.top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; min-height: 36px; }
+.logo { width: 34px; height: 34px; border-radius: 10px; background: var(--lima); color: #111; display: grid; place-items: center; }
+.top h1 { font-size: 20px; font-weight: 700; flex: 1; }
+.ibtn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--borde); display: grid; place-items: center; color: var(--mut); font-size: 20px; }
+h2 { font-size: 22px; font-weight: 700; }
+.sub { color: var(--mut); font-size: 12.5px; margin: 2px 0 12px; }
+.maq { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--borde); background: var(--card); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.maq i { width: 8px; height: 8px; border-radius: 50%; background: var(--lima); }
+.agr { background: var(--lima); color: #111; font-weight: 700; font-size: 13px; border-radius: 999px; padding: 8px 14px; }
+
+.card { background: var(--card); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px 14px; margin-bottom: 10px; }
+.sel { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; }
+.sel .k, .k { font-size: 11px; color: var(--mut); }
+.sel .v { font-size: 14.5px; font-weight: 600; }
+.d { font-size: 11.5px; color: var(--mut); }
+.cod { color: var(--lima); font-size: 13.5px; font-weight: 700; letter-spacing: .2px; }
+.chev { margin-left: auto; color: var(--mut); font-size: 18px; }
+.icn { width: 38px; height: 38px; border-radius: 12px; background: var(--card2); border: 1px solid var(--borde); display: grid; place-items: center; flex-shrink: 0; color: var(--lima); }
+.punto { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.15); }
+.badge { font-size: 10.5px; padding: 3px 8px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.b-sug { background: rgba(242,179,61,.15); color: var(--ambar); }
+.b-ok { background: rgba(200,224,90,.15); color: var(--lima); }
+
+.res { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.res .card { margin: 0; }
+.lbl { font-size: 11.5px; color: var(--mut); margin-bottom: 2px; }
+.big { font-size: 32px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.big small { font-size: 12px; color: var(--mut); font-weight: 500; margin-left: 3px; letter-spacing: 0; }
+.mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mini .card { margin: 0; padding: 10px; }
+.mini input { font-size: 17px; font-weight: 700; padding: 0; }
+.mini .card.editado { border-color: var(--lima2); }
+.mini .card:focus-within { border-color: var(--lima); }
+.aviso { font-size: 12px; color: var(--ambar); background: rgba(242,179,61,.1); border-radius: 10px; padding: 8px 10px; margin-top: 8px; }
+.error { font-size: 12.5px; color: var(--rojo); background: rgba(255,122,107,.1); border-radius: 10px; padding: 8px 10px; margin-top: 8px; }
+.enlace { color: var(--lima); font-size: 12.5px; text-decoration: underline; padding: 8px 0 0; }
+.btn2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.btn2 button { border: 1px solid var(--lima); color: var(--lima); border-radius: 14px; padding: 12px 0; font-size: 14px; font-weight: 700; }
+.btn2 .ll { background: var(--lima); color: #111; }
+.primario { display: block; width: 100%; background: var(--lima); color: #111; font-weight: 700; text-align: center; border-radius: 14px; padding: 13px; font-size: 14.5px; }
+.vacio { text-align: center; color: var(--mut); padding: 30px 10px; font-size: 14px; }
+.vacio .primario { margin-top: 14px; }
+
+.campos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.campos.c3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.campo { background: var(--card); border: 1px solid var(--borde); border-radius: 12px; padding: 7px 10px; display: block; }
+.campo:focus-within { border-color: var(--lima); }
+.campo input, .campo select { font-size: 15px; font-weight: 600; padding: 2px 0 0; }
+.campo select option { background: var(--card); }
+.campo.resaltado { border-color: var(--lima); }
+
+.buscar { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--borde); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 10px; color: var(--mut); }
+.buscar input { color: var(--txt); }
+.chips { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { font-size: 12.5px; border: 1px solid var(--borde); border-radius: 999px; padding: 6px 12px; color: var(--mut); white-space: nowrap; }
+.chips button[aria-pressed="true"] { background: var(--lima); color: #111; border-color: var(--lima); font-weight: 600; }
+.grp { font-size: 11px; color: var(--mut); text-transform: uppercase; letter-spacing: .8px; margin: 12px 2px 6px; }
+.tool { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--borde); border-radius: 16px; padding: 10px 12px; margin-bottom: 8px; }
+.tool .estrella { margin-left: auto; color: var(--lima); }
+.item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--linea); }
+.item.activo { background: rgba(200,224,90,.07); border-radius: 12px; border-bottom-color: transparent; }
+.item .v { font-size: 14px; font-weight: 600; }
+.item .der { margin-left: auto; }
+.btnl { display: block; width: 100%; text-align: center; border: 1px dashed var(--lima2); color: var(--lima); border-radius: 14px; padding: 12px; font-size: 13.5px; font-weight: 600; margin-top: 12px; }
+
+/* Ficha */
+.foto { height: 150px; border-radius: 18px; background: linear-gradient(135deg, #20241c, #14170f); border: 1px solid var(--borde); display: grid; place-items: center; margin-bottom: 12px; overflow: hidden; color: var(--lima); }
+.foto img { width: 100%; height: 100%; object-fit: cover; }
+.foto svg { width: 70px; height: 70px; opacity: .8; }
+.tagcod { display: inline-block; font-size: 12.5px; font-weight: 700; background: rgba(200,224,90,.13); color: var(--lima); padding: 4px 9px; border-radius: 8px; margin-bottom: 6px; }
+.specs { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border: 1px solid var(--borde); border-radius: 16px; margin-bottom: 10px; overflow: hidden; }
+.specs > div { padding: 9px 12px; border-bottom: 1px solid var(--linea); }
+.specs > div:nth-child(odd) { border-right: 1px solid var(--linea); }
+.specs .v { font-size: 14px; font-weight: 600; }
+.acc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.acc button { border: 1px solid var(--borde); border-radius: 12px; padding: 10px 0; font-size: 13px; }
+.acc .del { color: var(--rojo); }
+
+/* Barra inferior */
+.nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; background: #111310; border-top: 1px solid var(--borde); display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; padding: 6px 0 calc(10px + env(safe-area-inset-bottom)); }
+.nav button { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; color: var(--mut); padding: 4px 0; }
+.nav button[aria-current="page"] { color: var(--lima); }
+.nav .mas { width: 58px; height: 58px; border-radius: 50%; background: var(--lima); color: #111; display: grid; place-items: center; margin: -30px auto 0; box-shadow: 0 0 0 6px var(--bg); }
+.nav .mas svg { width: 27px; height: 27px; }
+
+/* Hojas que suben desde abajo */
+.velo { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 20; opacity: 0; transition: opacity .2s; }
+.hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 92dvh; overflow-y: auto; background: #141612; border-top: 1px solid var(--borde); border-radius: 26px 26px 0 0; padding: 10px 18px calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .25s ease; max-width: 560px; margin: 0 auto; }
+.hoja.abierta { transform: none; }
+.velo.abierta { opacity: 1; }
+.asa { width: 40px; height: 4px; border-radius: 4px; background: #3a3f35; margin: 0 auto 12px; }
+.hoja h3 { font-size: 17px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.hoja h3 .x { color: var(--mut); font-size: 20px; padding: 0 4px; }
+.hoja h3 .cuenta { font-size: 13px; color: var(--mut); font-weight: 500; }
+
+/* Formulario de herramienta */
+.paso { font-size: 11.5px; color: var(--mut); margin: 4px 0 5px; }
+.formas { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 8px; }
+.formas button { background: var(--card); border: 1px solid var(--borde); border-radius: 14px; padding: 8px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; color: var(--mut); }
+.formas button[aria-pressed="true"] { border-color: var(--lima); color: var(--txt); background: rgba(200,224,90,.07); }
+.formas button[aria-pressed="true"] svg { color: var(--lima); }
+.foto3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.foto3 label { border: 1px dashed var(--lima2); border-radius: 12px; padding: 7px 4px; text-align: center; font-size: 10.5px; line-height: 1.25; cursor: pointer; }
+.foto3 label b { display: block; font-size: 16px; color: var(--lima); }
+.miniatura { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--borde); border-radius: 12px; padding: 6px; margin-bottom: 8px; font-size: 12.5px; }
+.miniatura img { width: 46px; height: 46px; object-fit: cover; border-radius: 8px; }
+.miniatura button { margin-left: auto; color: var(--rojo); font-size: 12.5px; padding: 6px 8px; }
+.punta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.punta button { border: 1px solid var(--borde); border-radius: 12px; padding: 9px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--mut); text-align: left; }
+.punta button[aria-pressed="true"] { border-color: var(--lima); color: var(--txt); background: rgba(200,224,90,.07); }
+.codprev { background: rgba(200,224,90,.08); border: 1px solid rgba(200,224,90,.35); border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; display: block; }
+.codprev input { color: var(--lima); font-size: 16px; font-weight: 700; }
+.avm { font-size: 12px; color: var(--ambar); background: rgba(242,179,61,.12); border: 1px solid rgba(242,179,61,.3); border-radius: 12px; padding: 9px 11px; margin-bottom: 8px; line-height: 1.35; }
+
+/* Pantalla "próxima etapa" */
+.pronto { text-align: center; padding: 60px 20px; color: var(--mut); }
+.pronto svg { width: 54px; height: 54px; color: var(--lima); margin-bottom: 14px; }
+.pronto h2 { color: var(--txt); margin-bottom: 6px; }
+
+#toast { position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 40; background: var(--txt); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); text-align: center; }
+#toast.visible { opacity: 1; }
+.sprite { position: absolute; width: 0; height: 0; }
+.sel .der { margin-left: auto; } .sel .der + .chev { margin-left: 6px; }
+.nav .mas, .nav .mas[aria-current] { color: #111; }
+.campo input:focus-visible, .campo select:focus-visible, .mini input:focus-visible, .codprev input:focus-visible, .buscar input:focus-visible { outline: none; }
+.codprev:focus-within { border-color: var(--lima); }
+
+/* Estrategia de corte */
+.est-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 13.5px; }
+.sw-etq { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--mut); }
+.sw { width: 40px; height: 22px; border-radius: 999px; background: #33382e; position: relative; flex-shrink: 0; }
+.sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--mut); transition: left .15s; }
+.sw[aria-checked="true"] { background: var(--lima); }
+.sw[aria-checked="true"]::after { left: 21px; background: #111; }
+.fila-v { display: flex; align-items: baseline; gap: 4px; }
+.fila-v input { min-width: 0; }
+.q { font-size: 11px; color: var(--mut); white-space: nowrap; }
+.medidor { height: 5px; border-radius: 5px; background: #2a2e26; margin-top: 5px; position: relative; overflow: hidden; }
+.medidor i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--lima); }
+.medidor i.am { background: var(--ambar); } .medidor i.ro { background: var(--rojo); }
+.ok { color: var(--lima); } .am { color: var(--ambar); } .ro { color: var(--rojo); }
+.dib-fila { display: flex; gap: 12px; align-items: center; background: var(--card2); border-radius: 12px; padding: 8px; }
+.dibujo { display: block; } .d-mat { fill: #2a2e26; } .d-hueco { fill: rgba(242,179,61,.18); stroke: var(--ambar); stroke-width: 1; stroke-dasharray: 2 2; } .d-fresa { fill: none; stroke: var(--lima); stroke-width: 1.6; }
+.d-cono { fill: #5b6156; } .d-ap { fill: var(--ambar); font-size: 9px; } .d-ae { fill: var(--lima); font-size: 9px; }
+.mini + .mini { margin-top: 8px; }
+.mini .v.am { color: var(--ambar); } .mini .v.ro { color: var(--rojo); }
+.ayuda { align-self: center; line-height: 1.3; }
+
+/* Materiales */
+.punto.grande { width: 18px; height: 18px; }
+.punto.enorme { width: 64px; height: 64px; box-shadow: 0 0 0 4px rgba(255,255,255,.06); }
+.tool .der { margin-left: auto; }
+.titulo-mat { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sec { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; margin: 12px 0 6px; color: var(--txt); }
+.sec svg { width: 17px; height: 17px; color: var(--lima); }
+.nota { margin: -2px 2px 10px; }
+.hrow { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--card); border: 1px solid var(--borde); border-radius: 14px; padding: 10px 12px; margin: 8px 0 10px; }
+.hrow .v { font-size: 13.5px; font-weight: 600; }
+.colores { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.colores button { width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.18) inset; }
+.colores button[aria-checked="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--lima); }
+.fotobtn { display: flex; align-items: center; gap: 10px; border: 1px dashed var(--lima2); border-radius: 12px; padding: 11px 12px; margin-bottom: 8px; font-size: 13px; cursor: pointer; }
+.fotobtn b { color: var(--lima); font-size: 16px; }
+.fotobtn i { color: var(--mut); }
+.hoja .chips { margin-bottom: 8px; }
+
+/* Uso de la fresa */
+.k .marca { color: var(--mut); font-weight: 400; }
+.campo.editado { border-color: var(--lima2); }
+.campo.editado .marca { color: var(--lima); }
+.uso-caja { margin-top: 4px; }
+.uso-tit { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; margin: 2px 2px 6px; }
+.uso-tit .enlace { padding: 0; }
+.usos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.uso-fila { display: flex; justify-content: space-between; font-size: 12px; }
+.uso-fila b { font-size: 13px; }
+.medidor.grande { height: 7px; overflow: visible; }
+.medidor .tope { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--txt); border-radius: 2px; }
+.uso .q { display: block; margin-top: 3px; white-space: normal; line-height: 1.25; }
+.v.notas { font-size: 13px; font-weight: 500; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Historial */
+.hfila { display: flex; align-items: stretch; gap: 6px; margin-bottom: 7px; }
+.hrow.hist { flex: 1; min-width: 0; margin: 0; text-align: left; width: 100%; }
+.hinfo { flex: 1; min-width: 0; }
+.hinfo .cod { font-size: 12.5px; overflow-wrap: anywhere; }
+.hrow .r { text-align: right; flex-shrink: 0; }
+.hrow .r b { font-size: 15px; }
+.hrow .r div { font-size: 11px; color: var(--mut); white-space: nowrap; }
+.quitar { width: 40px; flex-shrink: 0; border: 1px solid var(--borde); border-radius: 14px; color: var(--mut); font-size: 13px; }
+.enlace-sutil { color: var(--mut); font-size: 12.5px; padding: 6px 2px; }
+.d.am { color: var(--ambar); }
+
+/* Compartir */
+.pdf-vista { background: #fff; border-radius: 12px; overflow: hidden; margin-bottom: 12px; min-height: 120px; display: grid; place-items: center; }
+.pdf-vista img { width: 100%; display: block; }
+.pdf-vista .vacio { color: #6b7264; }
+.op { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--borde); border-radius: 14px; padding: 11px 12px; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--txt); text-decoration: none; }
+.op small { display: block; font-size: 11.5px; color: var(--mut); font-weight: 400; }
+.op .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 17px; flex-shrink: 0; }
+.op .wsp { background: #25d366; color: #fff; } .op .lima { background: var(--lima); color: #111; } .op .gris { background: var(--card2); border: 1px solid var(--borde); }
+.respaldo { width: 100%; background: var(--card); color: var(--txt); border: 1px solid var(--borde); border-radius: 12px; padding: 10px; font: 13px/1.4 inherit; }
+
+/* Ajustes */
+.ajt { font-size: 11px; color: var(--mut); text-transform: uppercase; letter-spacing: .8px; margin: 14px 2px 6px; }
+.aj { background: var(--card); border: 1px solid var(--borde); border-radius: 16px; overflow: hidden; }
+.aj-fila { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 12px; border-bottom: 1px solid var(--linea); font-size: 14px; min-height: 50px; }
+.aj > .aj-fila:last-child { border-bottom: 0; }
+.aj-ico { width: 22px; text-align: center; color: var(--mut); flex-shrink: 0; }
+.aj-tit { flex: 1; min-width: 0; }
+.aj-tit small { display: block; font-size: 11px; color: var(--mut); }
+.aj-fila .r { color: var(--mut); font-size: 12px; text-align: right; }
+.aj-fila .chev { margin-left: 2px; font-size: 18px; }
+.pto { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--mut); }
+.pto.on { background: var(--lima); }
+.version { color: var(--mut); font-size: 11.5px; text-align: center; margin: 18px 0 8px; }
+.campos.c4 { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.campos.c4 .campo { padding: 6px 8px; }
+.campos.c4 .k { font-size: 10px; }
+.rango .sec { flex-wrap: wrap; }
+.btn-peligro { display: block; width: 100%; margin-top: 10px; border: 1px solid var(--rojo); color: var(--rojo); border-radius: 14px; padding: 12px; font-weight: 700; font-size: 14px; }
+.btn-peligro.lleno { background: var(--rojo); color: #1a0705; }
+label.op { cursor: pointer; }
+
+</style>
+  
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true"><defs>
+    <symbol id="i-plana" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11h8v10H8z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 14l8-2M8 18l8-2" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-esferica" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11h8v6a4 4 0 0 1-8 0z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 14l8-2" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-toroidal" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11h8v8q0 2-2 2h-4q-2 0-2-2z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 15l8-2" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-chaflan" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 11h12l-6 10z" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-fresaT" viewBox="0 0 24 24"><rect x="10" y="2" width="4" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="14" width="16" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 14v5M12 14v5M17 14v5" stroke="currentColor" stroke-width="1.2"/></symbol>
+    <symbol id="i-grabado" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 12h6l-3 9z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 12v9" stroke="currentColor" stroke-width="1.2"/></symbol>
+    <symbol id="i-grabadoPunta" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 12h6l-2 8h-2z" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-insertos" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="10" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 18v2h3v-2M10.5 18v2h3v-2M16 18v2h3v-2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-broca" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 9h6v9l-3 4-3-4z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l6 2M9 16l6 2" stroke="currentColor" stroke-width="1.3"/></symbol>
+    <symbol id="i-macho" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 9h6M9 9l1.5 1.5L9 12l1.5 1.5L9 15l1.5 1.5L9 18l3 3 3-3-1.5-1.5L15 15l-1.5-1.5L15 12l-1.5-1.5L15 9" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-otra" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2.5"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 7h8M8 12h2M12 12h2M8 16h2M12 16h2M16 12v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-caja" viewBox="0 0 24 24"><path d="M3 8h18v12H3zM8 8V5h8v3M3 13h18" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-cubo" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-hist" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-engr" viewBox="0 0 24 24"><path d="M10.3 2.5h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9-2.6-.5v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-lupa" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  </defs></svg>
+
+  <main id="vista">
+    <div class="pronto" id="sin-arranque">
+      <h2>La app no pudo iniciar</h2>
+      <p>Recarga la página. Si sigue igual, actualiza el navegador.</p>
+    </div>
+  </main>
+
+  <nav class="nav" aria-label="Secciones">
+    <button type="button" data-ir="herramientas"><svg class="i"><use href="#i-caja"/></svg>Herramientas</button>
+    <button type="button" data-ir="materiales"><svg class="i"><use href="#i-cubo"/></svg>Materiales</button>
+    <button type="button" data-ir="calcular" class="mas" aria-label="Calcular"><svg class="i"><use href="#i-calc"/></svg></button>
+    <button type="button" data-ir="historial"><svg class="i"><use href="#i-hist"/></svg>Historial</button>
+    <button type="button" data-ir="ajustes"><svg class="i"><use href="#i-engr"/></svg>Ajustes</button>
+  </nav>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  // ../../../home/claude/cnc-app/js/core/calculos.js
+  var ErrorCalculo = class extends Error {
+    constructor(mensaje) {
+      super(mensaje);
+      this.name = "ErrorCalculo";
+    }
+  };
+  function positivo(valor, nombre) {
+    if (typeof valor !== "number" || !Number.isFinite(valor) || valor <= 0) {
+      throw new ErrorCalculo(`${nombre} debe ser un n\xFAmero mayor que 0.`);
+    }
+    return valor;
+  }
+  function rpmDesdeVc(vc, diametro) {
+    positivo(vc, "La Vc");
+    positivo(diametro, "El di\xE1metro");
+    return vc * 1e3 / (Math.PI * diametro);
+  }
+  function vcDesdeRpm(rpm, diametro) {
+    positivo(rpm, "Las RPM");
+    positivo(diametro, "El di\xE1metro");
+    return Math.PI * diametro * rpm / 1e3;
+  }
+  function diametroEfectivoV(angulo, dPunta, profundidad2, dMax) {
+    if (!(angulo > 0 && angulo < 180)) throw new ErrorCalculo("El \xE1ngulo debe estar entre 0\xB0 y 180\xB0.");
+    if (!(dPunta >= 0)) throw new ErrorCalculo("El \xD8 de punta no puede ser negativo.");
+    positivo(profundidad2, "La profundidad");
+    const d = dPunta + 2 * profundidad2 * Math.tan(angulo * Math.PI / 360);
+    return dMax > 0 ? Math.min(d, dMax) : d;
+  }
+  function escalarAvance(avanceRef10, diametro) {
+    positivo(avanceRef10, "El avance de referencia");
+    positivo(diametro, "El di\xE1metro");
+    return avanceRef10 * Math.min(2, Math.max(0.25, diametro / 10));
+  }
+  function redondearA(valor, paso) {
+    if (!(paso > 1)) return Math.round(valor);
+    return Math.max(paso, Math.round(valor / paso) * paso);
+  }
+  function calcular(p) {
+    if (!p || typeof p !== "object") throw new ErrorCalculo("Faltan datos para calcular.");
+    const { modo, diametro, vc, filos, avance, paso, maquina, opciones = {} } = p;
+    const avisos = [];
+    const factor = 1 - Math.min(50, Math.max(0, opciones.margen ?? 0)) / 100;
+    let rpm = rpmDesdeVc(vc, diametro) * factor;
+    if (maquina?.rpmMax > 0 && rpm > maquina.rpmMax) {
+      avisos.push(`RPM limitadas al m\xE1ximo de ${maquina.nombre ?? "la m\xE1quina"} (${maquina.rpmMax.toLocaleString("es-CL")}).`);
+      rpm = maquina.rpmMax;
+    }
+    rpm = modo === "macho" ? Math.floor(rpm) : Math.min(redondearA(rpm, opciones.redondeoRpm), maquina?.rpmMax || Infinity);
+    rpm = Math.max(1, rpm);
+    let vf;
+    if (modo === "fresa") {
+      positivo(avance, "El avance por diente (fz)");
+      if (!Number.isInteger(filos) || filos < 1) throw new ErrorCalculo("Los filos deben ser un entero mayor o igual a 1.");
+      vf = avance * filos * rpm * factor;
+    } else if (modo === "broca") {
+      positivo(avance, "El avance por vuelta (f)");
+      vf = avance * rpm * factor;
+    } else if (modo === "macho") {
+      positivo(paso, "El paso");
+      vf = paso * rpm;
+      avisos.push("Roscado r\xEDgido: avance = paso \xD7 RPM. No uses el override de avance.");
+    } else {
+      throw new ErrorCalculo(`Modo de c\xE1lculo desconocido: "${modo}".`);
+    }
+    if (modo !== "macho") vf = redondearA(vf, opciones.redondeoAvance);
+    if (maquina?.avanceMax > 0 && vf > maquina.avanceMax) {
+      if (modo === "macho") throw new ErrorCalculo("El avance del macho supera el m\xE1ximo de la m\xE1quina: baja la Vc.");
+      avisos.push(`Avance limitado al m\xE1ximo de la m\xE1quina (${maquina.avanceMax.toLocaleString("es-CL")} mm/min).`);
+      vf = maquina.avanceMax;
+    }
+    return {
+      rpm,
+      vf: modo === "macho" ? Math.round(vf * 10) / 10 : Math.round(vf),
+      vcReal: Math.round(vcDesdeRpm(rpm, diametro) * 10) / 10,
+      avisos
+    };
+  }
+  var ESTRATEGIAS = Object.freeze({
+    ranura: { nombre: "Ranura", ae: [100, 100], ap: [0.25, 0.5], defecto: { ae: 1, ap: 0.5 } },
+    lateral: { nombre: "Desbaste lateral", ae: [10, 40], ap: [0.5, 1.5], defecto: { ae: 0.3, ap: 1 } },
+    acabado: { nombre: "Acabado", ae: [2, 10], ap: [0.1, 3], defecto: { ae: 0.05, ap: 1 } },
+    trocoidal: { nombre: "Trocoidal", ae: [5, 15], ap: [1, 2], defecto: { ae: 0.1, ap: 1.5 } }
+  });
+  function estrategia(id, rangos) {
+    const base = ESTRATEGIAS[id];
+    if (!base) throw new ErrorCalculo("Elige una estrategia de corte.");
+    const r = rangos?.[id];
+    const valido = (par) => Array.isArray(par) && par.length === 2 && par.every((v) => Number.isFinite(v) && v >= 0) && par[0] <= par[1];
+    return { ...base, ae: valido(r?.ae) ? r.ae : base.ae, ap: valido(r?.ap) ? r.ap : base.ap };
+  }
+  function factorVirutaFina(ae, diametro) {
+    positivo(ae, "El corte radial (ae)");
+    positivo(diametro, "El di\xE1metro");
+    if (ae >= diametro / 2) return 1;
+    return Math.min(2, diametro / (2 * Math.sqrt(diametro * ae - ae * ae)));
+  }
+  function factorVoladizo(voladizo, diametro) {
+    positivo(voladizo, "El voladizo");
+    positivo(diametro, "El di\xE1metro");
+    const relacion = voladizo / diametro;
+    if (relacion <= 3) return { factor: 1, relacion, nivel: "ok" };
+    if (relacion <= 4) return { factor: 0.85, relacion, nivel: "alerta" };
+    if (relacion <= 5) return { factor: 0.65, relacion, nivel: "alerta" };
+    return { factor: 0.5, relacion, nivel: "riesgo" };
+  }
+  function evaluarRango(valor, [min, max]) {
+    if (valor < min * 0.999) return "bajo";
+    if (valor <= max * 1.001) return "ok";
+    return valor <= max * 1.25 ? "alto" : "muyAlto";
+  }
+  var pctTxt = (v) => `${Math.round(v)} %`;
+  function corteAutomatico(p) {
+    const e = estrategia(p.estrategia, p.rangos);
+    const D = positivo(p.diametro, "El di\xE1metro");
+    const lc = p.largoCorte > 0 ? p.largoCorte : D * 2;
+    const r12 = (v) => Math.round(v * 10) / 10;
+    const voladizoEstimado = !(p.voladizo > 0);
+    const voladizo = voladizoEstimado ? Math.ceil(Math.min(p.largoTotal > 0 ? p.largoTotal : Infinity, lc + 5)) : p.voladizo;
+    const rel = voladizo / D;
+    const fAp = rel > 5 ? 0.5 : rel > 4 ? 0.75 : 1;
+    return {
+      ae: r12(e.defecto.ae * D),
+      ap: Math.max(0.1, r12(Math.min(e.defecto.ap * D, lc) * fAp)),
+      voladizo,
+      voladizoEstimado
+    };
+  }
+  function evaluarFresado(p) {
+    const e = estrategia(p.estrategia, p.rangos);
+    const { diametro, ae, ap, voladizo, ajustar = true } = p;
+    positivo(ae, "El corte radial (ae)");
+    positivo(ap, "La profundidad (ap)");
+    positivo(voladizo, "El voladizo");
+    if (ae > diametro * 1.0001) throw new ErrorCalculo("El corte radial (ae) no puede ser mayor que el di\xE1metro.");
+    const largoCorte = p.largoCorte > 0 ? p.largoCorte : null;
+    const fVF = factorVirutaFina(ae, diametro);
+    const vol = factorVoladizo(voladizo, diametro);
+    const nombre = e.nombre.toLowerCase();
+    const avisos = [];
+    const usoDiametro = ae / diametro * 100;
+    const maxDiametro = e.ae[1];
+    const estadoAe = evaluarRango(usoDiametro, e.ae);
+    const apMaxMm = Math.min(e.ap[1] * diametro, largoCorte ?? Infinity);
+    const usoLargo = largoCorte ? ap / largoCorte * 100 : null;
+    const maxLargo = largoCorte ? apMaxMm / largoCorte * 100 : null;
+    let estadoAp = evaluarRango(ap, [e.ap[0] * diametro, apMaxMm]);
+    if (largoCorte && ap > largoCorte) estadoAp = "muyAlto";
+    if (estadoAe === "muyAlto") avisos.push(`Usas ${pctTxt(usoDiametro)} del di\xE1metro; el m\xE1ximo para ${nombre} es ${pctTxt(maxDiametro)}. La fresa se puede quebrar o vibrar.`);
+    else if (estadoAe === "alto") avisos.push(`Usas ${pctTxt(usoDiametro)} del di\xE1metro, sobre el ${pctTxt(maxDiametro)} recomendado para ${nombre}: riesgo de vibraci\xF3n y desgaste.`);
+    if (largoCorte && ap > largoCorte) {
+      avisos.push(`La profundidad (${ap} mm) supera el largo de corte (${largoCorte} mm): el cuello de la fresa roza y se puede quebrar.`);
+    } else if (estadoAp === "muyAlto") {
+      avisos.push(usoLargo !== null ? `Usas ${pctTxt(usoLargo)} del largo de corte; el m\xE1ximo para ${nombre} es ${pctTxt(maxLargo)}. La fresa se puede quebrar o doblar.` : `Profundidad sobre el m\xE1ximo para ${nombre}: la fresa se puede quebrar o doblar.`);
+    } else if (estadoAp === "alto") {
+      avisos.push(`Profundidad algo sobre el m\xE1ximo para ${nombre}: riesgo de vibraci\xF3n.`);
+    }
+    if (voladizo < ap) avisos.push("El voladizo es menor que la profundidad: revisa el montaje.");
+    if (vol.nivel !== "ok") {
+      const baja = Math.round((1 - vol.factor) * 100);
+      avisos.push(`Voladizo ${vol.relacion.toFixed(1).replace(".", ",")}\xD7D (ideal \u2264 3\xD7D): ${ajustar ? `avance reducido ${baja} %` : `conviene bajar el avance ${baja} %`}${vol.nivel === "riesgo" ? "; la fresa se puede doblar, baja tambi\xE9n la profundidad" : ""}.`);
+    }
+    return {
+      factor: ajustar ? fVF * vol.factor : 1,
+      fVF,
+      fVol: vol.factor,
+      relVol: vol.relacion,
+      nivelVol: vol.nivel,
+      usoDiametro,
+      maxDiametro,
+      usoLargo,
+      maxLargo,
+      apMaxMm,
+      estadoAe,
+      estadoAp,
+      aePct: usoDiametro,
+      apD: ap / diametro,
+      avisos
+    };
+  }
+  function caudalViruta(ae, ap, vf) {
+    return ae * ap * vf / 1e3;
+  }
+
+  // ../../../home/claude/cnc-app/js/core/formas.js
+  var FRESA = ["diametro", "largoCorte", "diametroToma", "largoTotal", "filos"];
+  var EN_V = ["angulo", "diametroPunta", "diametroToma", "largoTotal", "filos"];
+  var FORMAS = Object.freeze([
+    { id: "plana", nombre: "Plana", modo: "fresa", campos: FRESA },
+    { id: "esferica", nombre: "Esf\xE9rica", modo: "fresa", campos: FRESA },
+    { id: "toroidal", nombre: "Toroidal", modo: "fresa", campos: [...FRESA, "radio"] },
+    { id: "chaflan", nombre: "Chafl\xE1n", modo: "fresa", campos: EN_V, enV: true },
+    { id: "fresaT", nombre: "Fresa en T", modo: "fresa", campos: FRESA },
+    { id: "grabado", nombre: "Grabado", modo: "fresa", campos: EN_V, enV: true },
+    { id: "insertos", nombre: "Insertos", modo: "fresa", campos: FRESA },
+    { id: "broca", nombre: "Broca", modo: "broca", campos: ["diametro", "largoCorte", "largoTotal"] },
+    { id: "macho", nombre: "Macho", modo: "macho", campos: ["rosca"] },
+    { id: "otra", nombre: "Otra", modo: "fresa", campos: FRESA }
+  ]);
+  var GRUPO = Object.freeze({
+    plana: "Fresas",
+    esferica: "Fresas",
+    toroidal: "Fresas",
+    chaflan: "Fresas",
+    fresaT: "Fresas",
+    grabado: "Fresas",
+    otra: "Fresas",
+    insertos: "Insertos",
+    broca: "Brocas",
+    macho: "Machos"
+  });
+  var ETIQUETAS = Object.freeze({
+    diametro: "\xD8 corte",
+    largoCorte: "Largo corte",
+    diametroToma: "\xD8 toma",
+    largoTotal: "Largo total",
+    filos: "Filos",
+    radio: "Radio punta",
+    angulo: "\xC1ngulo",
+    diametroPunta: "\xD8 punta"
+  });
+  function forma(id) {
+    const f = FORMAS.find((x) => x.id === id);
+    if (!f) throw new Error(`Forma desconocida: "${id}".`);
+    return f;
+  }
+  var n = (v) => Number.isFinite(v) ? String(Math.round(v * 1e3) / 1e3) : "?";
+  function codigo(h2, rosca) {
+    const f = forma(h2.forma);
+    if (f.id === "macho") return rosca?.codigo ?? "?";
+    if (f.id === "broca") return `\xD8${n(h2.diametro)} x ${n(h2.largoCorte)} x ${n(h2.largoTotal)}L`;
+    if (f.enV) {
+      return `${n(h2.angulo)}\xB0 x \xD8${n(h2.diametroPunta ?? 0)} x ${n(h2.diametroToma)}D x ${n(h2.largoTotal)}L x ${n(h2.filos)}F`;
+    }
+    return `\xD8${n(h2.diametro)} x ${n(h2.largoCorte)} x ${n(h2.diametroToma)}D x ${n(h2.largoTotal)}L x ${n(h2.filos)}F`;
+  }
+  function diametroNominal(h2, rosca) {
+    if (h2.forma === "macho") return rosca?.diametro ?? 0;
+    return forma(h2.forma).enV ? h2.diametroToma : h2.diametro;
+  }
+
+  // ../../../home/claude/cnc-app/js/data/catalogo.js
+  var REFRIGERACION = Object.freeze({ aire: "Aire", seco: "En seco", refrigerante: "Refrigerante", mql: "M\xEDnima lubricaci\xF3n" });
+  var MATERIALES_HERRAMIENTA = Object.freeze({
+    metal_duro: { nombre: "Metal duro", factor: 1 },
+    hss: { nombre: "HSS", factor: 0.5 },
+    insertos: { nombre: "Insertos", factor: 1 },
+    pcd: { nombre: "PCD", factor: 1 }
+  });
+  var m = (id, nombre, tipo, familia, color, vcFresa, fz10, vcBroca, f10, vcMacho) => Object.freeze({
+    id,
+    nombre,
+    tipo,
+    familia,
+    color,
+    vcFresa,
+    fz10,
+    vcBroca,
+    f10,
+    vcMacho,
+    confirmado: false,
+    refrigeracion: "aire",
+    notas: ""
+  });
+  var MATERIALES_BASE = Object.freeze([
+    m("okulen-1000", "Okulen 1000 blanco", "plastico", "PE-UHMW", "#f4f4ee", 300, 0.15, 150, 0.2, 15),
+    m("okulen-2000", "Okulen 2000 verde", "plastico", "PE-HMW", "#3f8f4f", 300, 0.15, 150, 0.2, 15),
+    m("tivar-1000", "Tivar 1000", "plastico", "PE-UHMW", "#e9e9e2", 300, 0.15, 150, 0.2, 15),
+    m("ertalon-natural", "Ertalon natural", "plastico", "PA6", "#ddd8c8", 250, 0.12, 120, 0.15, 12),
+    m("ertalon-negro", "Ertalon negro", "plastico", "PA6", "#2b2b2b", 250, 0.12, 120, 0.15, 12),
+    m("poliamida", "Poliamida", "plastico", "PA", "#e9e2c9", 250, 0.12, 120, 0.15, 12),
+    m("ceram-p", "Ceram-P", "plastico", "Pl\xE1stico con carga", "#9aa0a6", 180, 0.1, 90, 0.12, 10),
+    m("teflon-puro", "Tefl\xF3n puro", "plastico", "PTFE", "#fafafa", 250, 0.12, 120, 0.15, 12),
+    m("teflon-grafito", "Tefl\xF3n grafito", "plastico", "PTFE + grafito", "#3a3a3a", 200, 0.1, 100, 0.12, 10),
+    m("pom", "POM", "plastico", "Acetal", "#e8e8e0", 300, 0.12, 150, 0.15, 15),
+    m("peek", "PEEK", "plastico", "PEEK", "#b98a4a", 200, 0.08, 100, 0.1, 10),
+    m("pei", "PEI", "plastico", "PEI (Ultem)", "#c9933a", 200, 0.08, 100, 0.1, 10),
+    m("thordon", "Thordon", "plastico", "Pol\xEDmero elastom\xE9rico", "#d9a400", 200, 0.1, 100, 0.15, 10),
+    m("bronce", "Bronce", "metal", "Metal no ferroso", "#c08a3e", 150, 0.05, 70, 0.15, 8)
+  ]);
+  var MAQUINAS_BASE = Object.freeze([
+    Object.freeze({ id: "centro-1", nombre: "Centro 1", rpmMax: 6e3, avanceMax: 5e3 }),
+    Object.freeze({ id: "centro-2", nombre: "Centro 2", rpmMax: 6e3, avanceMax: 5e3 })
+  ]);
+  var OPCIONES_BASE = Object.freeze({ margen: 0, redondeoRpm: 10, redondeoAvance: 10, ajusteAuto: true });
+  function sugerir(material, herramienta, diametroCalculo) {
+    if (!material || !herramienta) throw new Error("Falta el material o la herramienta.");
+    const f = forma(herramienta.forma);
+    const factor = MATERIALES_HERRAMIENTA[herramienta.materialHerramienta]?.factor ?? 1;
+    if (f.modo === "macho") {
+      return { vc: material.vcMacho * (herramienta.materialHerramienta === "hss" ? 1 : 1.5), avance: null };
+    }
+    positivo(diametroCalculo, "El di\xE1metro");
+    if (f.modo === "broca") {
+      return { vc: material.vcBroca * factor, avance: escalarAvance(material.f10, diametroCalculo) };
+    }
+    return { vc: material.vcFresa * factor, avance: escalarAvance(material.fz10, diametroCalculo) };
+  }
+
+  // ../../../home/claude/cnc-app/js/data/roscas.js
+  var PULG = 25.4;
+  var r1 = (v) => Math.round(v * 10) / 10;
+  var r2 = (v) => Math.round(v * 100) / 100;
+  var metrica = (d, p, sistema) => ({
+    codigo: `M${d}x${p}`,
+    nombre: `M${d} \xD7 ${String(p).replace(".", ",")}`,
+    sistema,
+    diametro: d,
+    paso: p,
+    broca: r2(d - p)
+  });
+  var pulgada = (nombre, dPulg, hpp, sistema) => ({
+    codigo: `${nombre}-${hpp} ${sistema}`,
+    nombre: `${nombre}" - ${hpp} ${sistema}`,
+    sistema,
+    diametro: r2(dPulg * PULG),
+    paso: r2(PULG / hpp),
+    broca: r1((dPulg - 1 / hpp) * PULG)
+  });
+  var ROSCAS = Object.freeze([
+    ...[
+      [2, 0.4],
+      [2.5, 0.45],
+      [3, 0.5],
+      [4, 0.7],
+      [5, 0.8],
+      [6, 1],
+      [8, 1.25],
+      [10, 1.5],
+      [12, 1.75],
+      [14, 2],
+      [16, 2],
+      [18, 2.5],
+      [20, 2.5],
+      [22, 2.5],
+      [24, 3]
+    ].map(([d, p]) => metrica(d, p, "M\xE9trica")),
+    ...[
+      [6, 0.75],
+      [8, 1],
+      [10, 1],
+      [10, 1.25],
+      [12, 1.25],
+      [12, 1.5],
+      [14, 1.5],
+      [16, 1.5],
+      [18, 1.5],
+      [20, 1.5],
+      [24, 2]
+    ].map(([d, p]) => metrica(d, p, "M\xE9trica fina")),
+    ...[
+      ["#10", 0.19, 24],
+      ["1/4", 0.25, 20],
+      ["5/16", 0.3125, 18],
+      ["3/8", 0.375, 16],
+      ["7/16", 0.4375, 14],
+      ["1/2", 0.5, 13],
+      ["5/8", 0.625, 11],
+      ["3/4", 0.75, 10]
+    ].map(([n2, d, h2]) => pulgada(n2, d, h2, "UNC")),
+    ...[
+      ["#10", 0.19, 32],
+      ["1/4", 0.25, 28],
+      ["5/16", 0.3125, 24],
+      ["3/8", 0.375, 24],
+      ["1/2", 0.5, 20],
+      ["5/8", 0.625, 18],
+      ["3/4", 0.75, 16]
+    ].map(([n2, d, h2]) => pulgada(n2, d, h2, "UNF")),
+    ...[
+      ["1/8", 9.73, 28, 8.8],
+      ["1/4", 13.16, 19, 11.8],
+      ["3/8", 16.66, 19, 15.25],
+      ["1/2", 20.96, 14, 19],
+      ["3/4", 26.44, 14, 24.5],
+      ["1", 33.25, 11, 30.75]
+    ].map(([n2, d, h2, b]) => ({
+      codigo: `G${n2}`,
+      nombre: `G ${n2}" (BSP) - ${h2} hpp`,
+      sistema: "BSP",
+      diametro: d,
+      paso: r2(PULG / h2),
+      broca: b
+    }))
+  ]);
+  var SISTEMAS = Object.freeze(["M\xE9trica", "M\xE9trica fina", "UNC", "UNF", "BSP"]);
+  var buscarRosca = (codigo2) => ROSCAS.find((r) => r.codigo === codigo2);
+
+  // ../../../home/claude/cnc-app/js/data/almacen.js
+  var CLAVE = "cnc.datos";
+  var VERSION = 1;
+  var REVISION = 2;
+  var ErrorDatos = class extends Error {
+    constructor(mensaje) {
+      super(mensaje);
+      this.name = "ErrorDatos";
+    }
+  };
+  function nuevoId(prefijo) {
+    return `${prefijo}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  }
+  function datosIniciales() {
+    return {
+      version: VERSION,
+      revision: REVISION,
+      maquinaActiva: MAQUINAS_BASE[0].id,
+      maquinas: MAQUINAS_BASE.map((x) => ({ ...x })),
+      opciones: { ...OPCIONES_BASE, rangos: {} },
+      materiales: MATERIALES_BASE.map((x) => ({ ...x })),
+      herramientas: [],
+      historial: [],
+      ultimo: { herramienta: null, material: "pom", estrategia: "lateral" }
+    };
+  }
+  var num = (v) => typeof v === "number" ? v : Number.parseFloat(String(v ?? "").replace(",", "."));
+  var txt = (v, max = 80) => String(v ?? "").trim().slice(0, max);
+  var ETQ = { diametro: "\xD8 corte", largoCorte: "Largo", diametroToma: "\xD8 toma", largoTotal: "Largo total", filos: "Filos", radio: "Radio", angulo: "\xC1ngulo", diametroPunta: "\xD8 punta" };
+  function normalizarHerramienta(h2) {
+    if (!h2 || typeof h2 !== "object") throw new ErrorDatos("Herramienta vac\xEDa.");
+    if (!FORMAS.some((f2) => f2.id === h2.forma)) throw new ErrorDatos("Elige la forma de la herramienta.");
+    const f = forma(h2.forma);
+    const limpia = {
+      id: txt(h2.id, 60) || nuevoId("h"),
+      forma: f.id,
+      materialHerramienta: MATERIALES_HERRAMIENTA[h2.materialHerramienta] ? h2.materialHerramienta : "metal_duro",
+      marca: txt(h2.marca),
+      codigoCatalogo: txt(h2.codigoCatalogo),
+      favorita: Boolean(h2.favorita),
+      tieneFoto: Boolean(h2.tieneFoto)
+    };
+    if (f.id === "macho") {
+      const rosca = buscarRosca(h2.rosca);
+      if (!rosca) throw new ErrorDatos("Elige la rosca del macho.");
+      limpia.rosca = rosca.codigo;
+      limpia.tipoMacho = h2.tipoMacho === "mano" ? "mano" : "maquina";
+    } else {
+      for (const c of f.campos) {
+        const v = num(h2[c]);
+        const opcional = c === "radio" || c === "diametroPunta";
+        if (opcional && (h2[c] === "" || h2[c] === void 0 || h2[c] === null)) {
+          limpia[c] = 0;
+          continue;
+        }
+        const minimo = c === "diametroPunta" ? 0 : Number.MIN_VALUE;
+        if (!Number.isFinite(v) || v < minimo) throw new ErrorDatos(`${ETQ[c]}: ingresa un n\xFAmero v\xE1lido.`);
+        limpia[c] = c === "filos" ? Math.round(v) : v;
+      }
+      if (f.campos.includes("filos") && (limpia.filos < 1 || limpia.filos > 30)) throw new ErrorDatos("Filos: entre 1 y 30.");
+      if (f.enV && !(limpia.angulo > 0 && limpia.angulo < 180)) throw new ErrorDatos("\xC1ngulo: entre 0\xB0 y 180\xB0.");
+      if (f.enV && limpia.diametroPunta >= limpia.diametroToma) throw new ErrorDatos("El \xD8 de punta debe ser menor que el \xD8 de toma.");
+      if (limpia.largoCorte && limpia.largoTotal && limpia.largoCorte > limpia.largoTotal) {
+        throw new ErrorDatos("El largo de corte no puede ser mayor que el largo total.");
+      }
+    }
+    if (f.modo === "fresa" && !f.enV) {
+      const vol = num(h2.voladizo);
+      limpia.voladizo = Number.isFinite(vol) && vol > 0 ? vol : 0;
+    }
+    limpia.codigo = txt(h2.codigo, 60) || codigo(limpia, buscarRosca(limpia.rosca));
+    return limpia;
+  }
+  var ETQ_MAT = { vcFresa: "Vc de fresa", fz10: "fz para \xD810", vcBroca: "Vc de broca", f10: "f para \xD810", vcMacho: "Vc de macho" };
+  var LIMITE_MAT = { vcFresa: 2e3, fz10: 1, vcBroca: 1e3, f10: 1.5, vcMacho: 100 };
+  function normalizarMaterial(x) {
+    if (!x || typeof x !== "object" || !txt(x.nombre)) throw new ErrorDatos("Material sin nombre.");
+    const out = {
+      id: txt(x.id, 60) || nuevoId("m"),
+      nombre: txt(x.nombre),
+      tipo: x.tipo === "metal" ? "metal" : x.tipo === "otro" ? "otro" : "plastico",
+      familia: txt(x.familia),
+      color: /^#[0-9a-f]{6}$/i.test(x.color) ? x.color : "#9aa0a6",
+      confirmado: Boolean(x.confirmado)
+    };
+    for (const c of ["vcFresa", "fz10", "vcBroca", "f10", "vcMacho"]) {
+      const v = num(x[c]);
+      if (!(v > 0)) throw new ErrorDatos(`${ETQ_MAT[c]}: ingresa un n\xFAmero mayor que 0.`);
+      if (v > LIMITE_MAT[c]) throw new ErrorDatos(`${ETQ_MAT[c]}: el valor parece demasiado alto (m\xE1ximo ${LIMITE_MAT[c]}).`);
+      out[c] = v;
+    }
+    out.tieneFoto = Boolean(x.tieneFoto);
+    out.refrigeracion = REFRIGERACION[x.refrigeracion] ? x.refrigeracion : "aire";
+    out.notas = txt(x.notas, 300);
+    return out;
+  }
+  function limpiarRangos(r) {
+    const out = {};
+    if (!r || typeof r !== "object") return out;
+    for (const id of ["ranura", "lateral", "acabado", "trocoidal"]) {
+      const par = (v, max) => Array.isArray(v) && v.length === 2 && v.every((n2) => Number.isFinite(n2) && n2 >= 0 && n2 <= max) && v[0] <= v[1] ? [v[0], v[1]] : null;
+      const ae = par(r[id]?.ae, 100);
+      const ap = par(r[id]?.ap, 10);
+      if (ae || ap) out[id] = { ...ae ? { ae } : {}, ...ap ? { ap } : {} };
+    }
+    return out;
+  }
+  var MAX_HISTORIAL = 300;
+  function normalizarRegistro(r) {
+    if (!r || typeof r !== "object" || Number.isNaN(Date.parse(r.fecha))) return null;
+    const n2 = (v) => Number.isFinite(num(v)) ? num(v) : null;
+    const objNum = (o) => Object.fromEntries(Object.entries(o && typeof o === "object" ? o : {}).filter(([k, v]) => ["vc", "avance", "filos", "ae", "ap", "voladizo"].includes(k) && Number.isFinite(num(v))).map(([k, v]) => [k, num(v)]));
+    const res = r.resultado ?? {};
+    if (!(n2(res.rpm) > 0)) return null;
+    return {
+      id: txt(r.id, 60) || nuevoId("c"),
+      fecha: new Date(r.fecha).toISOString(),
+      herramientaId: txt(r.herramientaId, 60),
+      codigo: txt(r.codigo, 60),
+      forma: FORMAS.some((f) => f.id === r.forma) ? r.forma : "otra",
+      materialId: txt(r.materialId, 60),
+      materialNombre: txt(r.materialNombre),
+      maquinaId: txt(r.maquinaId, 60),
+      maquinaNombre: txt(r.maquinaNombre),
+      estrategia: ["ranura", "lateral", "acabado", "trocoidal"].includes(r.estrategia) ? r.estrategia : null,
+      manual: objNum(r.manual),
+      corte: objNum(r.corte),
+      resultado: Object.fromEntries(["rpm", "vf", "vc", "avance", "filos", "diametro", "ae", "ap", "voladizo", "profundidad"].map((k) => [k, n2(res[k])])),
+      nota: txt(r.nota, 120)
+    };
+  }
+  function validarDatos(crudo) {
+    if (!crudo || crudo.version !== VERSION) throw new ErrorDatos("Versi\xF3n de datos no soportada.");
+    const base = datosIniciales();
+    const maquinas = (crudo.revision ?? 1) < REVISION ? base.maquinas : Array.isArray(crudo.maquinas) && crudo.maquinas.length ? crudo.maquinas.filter((q) => q && num(q.rpmMax) > 0 && num(q.avanceMax) > 0).map((q) => ({ id: txt(q.id, 60), nombre: txt(q.nombre) || "M\xE1quina", rpmMax: num(q.rpmMax), avanceMax: num(q.avanceMax) })) : base.maquinas;
+    const o = crudo.opciones ?? {};
+    return {
+      version: VERSION,
+      revision: REVISION,
+      maquinas,
+      maquinaActiva: maquinas.some((q) => q.id === crudo.maquinaActiva) ? crudo.maquinaActiva : maquinas[0].id,
+      opciones: {
+        margen: num(o.margen) >= 0 && num(o.margen) <= 50 ? num(o.margen) : 0,
+        redondeoRpm: num(o.redondeoRpm) >= 1 ? num(o.redondeoRpm) : base.opciones.redondeoRpm,
+        redondeoAvance: num(o.redondeoAvance) >= 1 ? num(o.redondeoAvance) : base.opciones.redondeoAvance,
+        ajusteAuto: o.ajusteAuto !== false,
+        rangos: limpiarRangos(o.rangos)
+      },
+      materiales: (crudo.materiales ?? []).map(normalizarMaterial),
+      herramientas: (crudo.herramientas ?? []).map(normalizarHerramienta),
+      historial: (Array.isArray(crudo.historial) ? crudo.historial : []).map(normalizarRegistro).filter(Boolean).slice(0, MAX_HISTORIAL),
+      ultimo: {
+        herramienta: txt(crudo.ultimo?.herramienta, 60) || null,
+        material: txt(crudo.ultimo?.material, 60) || "pom",
+        estrategia: ["ranura", "lateral", "acabado", "trocoidal"].includes(crudo.ultimo?.estrategia) ? crudo.ultimo.estrategia : "lateral"
+      }
+    };
+  }
+  function cargar(almacen) {
+    try {
+      const crudo = (almacen ?? globalThis.localStorage)?.getItem(CLAVE);
+      if (!crudo) return { datos: datosIniciales(), aviso: null };
+      const datos2 = validarDatos(JSON.parse(crudo));
+      if (!datos2.materiales.length) datos2.materiales = datosIniciales().materiales;
+      return { datos: datos2, aviso: null };
+    } catch (error) {
+      console.error("No se pudieron cargar los datos:", error);
+      return { datos: datosIniciales(), aviso: "No se pudieron leer los datos guardados; se carg\xF3 el cat\xE1logo base." };
+    }
+  }
+  function guardar(datos2, almacen) {
+    try {
+      (almacen ?? globalThis.localStorage).setItem(CLAVE, JSON.stringify(datos2));
+      return true;
+    } catch (error) {
+      console.error("No se pudieron guardar los datos:", error);
+      return false;
+    }
+  }
+  function borrarDatos(almacen) {
+    try {
+      (almacen ?? globalThis.localStorage).removeItem(CLAVE);
+      return true;
+    } catch (error) {
+      console.error("No se pudieron borrar los datos:", error);
+      return false;
+    }
+  }
+  function respaldoJson(datos2) {
+    return JSON.stringify({ app: "CNC", exportado: (/* @__PURE__ */ new Date()).toISOString(), ...datos2 }, null, 2);
+  }
+  function leerRespaldo(texto3) {
+    let crudo;
+    try {
+      crudo = JSON.parse(texto3);
+    } catch {
+      throw new ErrorDatos("El archivo no es un respaldo v\xE1lido de la app.");
+    }
+    if (crudo?.app !== "CNC") throw new ErrorDatos("Este archivo no es un respaldo de la app CNC.");
+    const datos2 = validarDatos(crudo);
+    if (!datos2.materiales.length) throw new ErrorDatos("El respaldo no trae materiales.");
+    return datos2;
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/dom.js
+  var SVG = "http://www.w3.org/2000/svg";
+  function h(etiqueta, props = {}, ...hijos) {
+    const el = document.createElement(etiqueta);
+    for (const [k, v] of Object.entries(props ?? {})) {
+      if (v === void 0 || v === null || v === false) continue;
+      if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2), v);
+      else if (k.startsWith("aria-") || k.startsWith("data-") || k === "for" || k === "role") el.setAttribute(k, v);
+      else if (k === "clase") el.className = v;
+      else el[k] = v;
+    }
+    for (const hijo of hijos.flat()) {
+      if (hijo === null || hijo === void 0 || hijo === false) continue;
+      el.append(hijo);
+    }
+    return el;
+  }
+  function icono(id, clase = "i") {
+    const svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("class", clase);
+    svg.setAttribute("aria-hidden", "true");
+    const use = document.createElementNS(SVG, "use");
+    use.setAttribute("href", `#i-${id}`);
+    svg.append(use);
+    return svg;
+  }
+  function fmt(valor, decimales = 0) {
+    if (!Number.isFinite(valor)) return "\u2014";
+    return valor.toLocaleString("es-CL", { maximumFractionDigits: decimales, minimumFractionDigits: 0 });
+  }
+  function leerNumero(texto3) {
+    return Number.parseFloat(String(texto3 ?? "").trim().replace(",", "."));
+  }
+  var reloj;
+  function toast(mensaje) {
+    const t = document.getElementById("toast");
+    t.textContent = mensaje;
+    t.classList.add("visible");
+    clearTimeout(reloj);
+    reloj = setTimeout(() => t.classList.remove("visible"), 2600);
+  }
+  function abrirHoja(titulo, contenido, op = {}) {
+    const velo = h("div", { clase: "velo" });
+    const hoja = h("section", { clase: "hoja", role: "dialog", "aria-modal": "true", "aria-label": titulo });
+    const previo = document.activeElement;
+    let cerrada = false;
+    const cerrar = () => {
+      if (cerrada) return;
+      cerrada = true;
+      hoja.classList.remove("abierta");
+      velo.classList.remove("abierta");
+      document.removeEventListener("keydown", alTeclear);
+      setTimeout(() => {
+        hoja.remove();
+        velo.remove();
+        previo?.focus?.();
+      }, 260);
+    };
+    const alTeclear = (e) => {
+      if (e.key === "Escape") cerrar();
+    };
+    hoja.append(
+      h("div", { clase: "asa" }),
+      h(
+        "h3",
+        {},
+        h("span", {}, titulo),
+        op.cuenta ? h("span", { clase: "cuenta" }, op.cuenta) : h("button", { type: "button", clase: "x", "aria-label": "Cerrar", onclick: cerrar }, "\u2715")
+      ),
+      contenido(cerrar)
+    );
+    velo.addEventListener("click", cerrar);
+    document.addEventListener("keydown", alTeclear);
+    document.body.append(velo, hoja);
+    requestAnimationFrame(() => {
+      velo.classList.add("abierta");
+      hoja.classList.add("abierta");
+    });
+    return cerrar;
+  }
+  function botonConfirmar(texto3, accion, clase) {
+    let armado = false;
+    const b = h("button", { type: "button", clase }, texto3);
+    b.addEventListener("click", () => {
+      if (armado) {
+        accion();
+        return;
+      }
+      armado = true;
+      b.textContent = "\xBFSeguro?";
+      setTimeout(() => {
+        armado = false;
+        b.textContent = texto3;
+      }, 3e3);
+    });
+    return b;
+  }
+  function chips(opciones, actual, alCambiar) {
+    const fila2 = h("div", { clase: "chips", role: "group" });
+    const pintar = (valor) => {
+      for (const b of fila2.children) b.setAttribute("aria-pressed", String(b.dataset.valor === valor));
+    };
+    for (const o of opciones) {
+      fila2.append(h("button", { type: "button", "data-valor": o.valor, onclick: () => {
+        pintar(o.valor);
+        alCambiar(o.valor);
+      } }, o.texto));
+    }
+    pintar(actual);
+    return fila2;
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/estado.js
+  var { datos, aviso } = cargar();
+  var app = {
+    datos,
+    avisoCarga: aviso,
+    /** Navegación; la define app.js. @type {(vista:string, param?:any)=>void} */
+    ir: () => {
+    },
+    persistir() {
+      if (!guardar(this.datos)) toast("No se pudo guardar en este celular.");
+    },
+    maquina() {
+      return this.datos.maquinas.find((q) => q.id === this.datos.maquinaActiva) ?? this.datos.maquinas[0];
+    },
+    herramienta(id) {
+      return this.datos.herramientas.find((x) => x.id === id);
+    },
+    material(id) {
+      return this.datos.materiales.find((x) => x.id === id);
+    }
+  };
+  var NOMBRE = {
+    plana: "Fresa plana",
+    esferica: "Fresa esf\xE9rica",
+    toroidal: "Fresa toroidal",
+    chaflan: "Fresa de chafl\xE1n",
+    fresaT: "Fresa en T",
+    grabado: "Fresa de grabado",
+    insertos: "Fresa de insertos",
+    broca: "Broca",
+    macho: "Macho",
+    otra: "Herramienta"
+  };
+  function nombreHerramienta(h2) {
+    if (h2.forma === "macho") return `Macho ${buscarRosca(h2.rosca)?.nombre ?? ""}`.trim();
+    if (forma(h2.forma).enV) return `${NOMBRE[h2.forma]} ${fmt(h2.angulo, 1)}\xB0`;
+    return `${NOMBRE[h2.forma]} \xD8${fmt(diametroNominal(h2), 2)}`;
+  }
+  function detalleHerramienta(h2) {
+    const partes = [forma(h2.forma).nombre, MATERIALES_HERRAMIENTA[h2.materialHerramienta]?.nombre];
+    if (h2.forma === "macho") partes.push(h2.tipoMacho === "mano" ? "mano" : "m\xE1quina");
+    if (h2.marca) partes.push(h2.marca);
+    return partes.filter(Boolean).join(" \xB7 ");
+  }
+
+  // ../../../home/claude/cnc-app/js/data/fotos.js
+  var BD = "cnc-fotos";
+  var TABLA = "fotos";
+  var LADO_MAX = 800;
+  function abrir() {
+    return new Promise((resolver, rechazar) => {
+      if (!("indexedDB" in globalThis)) {
+        rechazar(new Error("Este navegador no permite guardar fotos."));
+        return;
+      }
+      const pedido = indexedDB.open(BD, 1);
+      pedido.onupgradeneeded = () => pedido.result.createObjectStore(TABLA);
+      pedido.onsuccess = () => resolver(pedido.result);
+      pedido.onerror = () => rechazar(pedido.error);
+    });
+  }
+  async function operar(modo, accion) {
+    const bd = await abrir();
+    try {
+      return await new Promise((resolver, rechazar) => {
+        const tx = bd.transaction(TABLA, modo);
+        const pedido = accion(tx.objectStore(TABLA));
+        tx.oncomplete = () => resolver(pedido?.result);
+        tx.onerror = () => rechazar(tx.error);
+        tx.onabort = () => rechazar(tx.error);
+      });
+    } finally {
+      bd.close();
+    }
+  }
+  async function prepararFoto(archivo) {
+    if (!archivo?.type?.startsWith("image/")) throw new Error("El archivo no es una imagen.");
+    const imagen = await createImageBitmap(archivo);
+    const escala = Math.min(1, LADO_MAX / Math.max(imagen.width, imagen.height));
+    const lienzo = document.createElement("canvas");
+    lienzo.width = Math.round(imagen.width * escala);
+    lienzo.height = Math.round(imagen.height * escala);
+    lienzo.getContext("2d").drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+    imagen.close?.();
+    return new Promise((resolver, rechazar) => {
+      lienzo.toBlob((b) => b ? resolver(b) : rechazar(new Error("No se pudo procesar la foto.")), "image/jpeg", 0.8);
+    });
+  }
+  var guardarFoto = (id, blob) => operar("readwrite", (t) => t.put(blob, id));
+  var leerFoto = (id) => operar("readonly", (t) => t.get(id));
+  var borrarFoto = (id) => operar("readwrite", (t) => t.delete(id));
+  function borrarTodasLasFotos() {
+    return new Promise((resolver) => {
+      try {
+        const pedido = indexedDB.deleteDatabase(BD);
+        pedido.onsuccess = pedido.onerror = pedido.onblocked = () => resolver();
+      } catch {
+        resolver();
+      }
+    });
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/vista-herramientas.js
+  var ORDEN_GRUPOS = ["Fresas", "Insertos", "Brocas", "Machos"];
+  var filtroLista = "Todas";
+  var textoLista = "";
+  function vistaHerramientas(raiz2) {
+    const cont = h("div");
+    const total = app.datos.herramientas.length;
+    const pintar = () => {
+      const t = textoLista.toLowerCase();
+      const lista = app.datos.herramientas.filter((x) => filtroLista === "Todas" || GRUPO[x.forma] === filtroLista).filter((x) => !t || `${x.codigo} ${nombreHerramienta(x)} ${x.marca} ${x.codigoCatalogo}`.toLowerCase().includes(t));
+      const bloques = [];
+      for (const grupo of ORDEN_GRUPOS) {
+        const del = lista.filter((x) => GRUPO[x.forma] === grupo).sort((a, b) => b.favorita - a.favorita || diametroNominal(a, buscarRosca(a.rosca)) - diametroNominal(b, buscarRosca(b.rosca)));
+        if (!del.length) continue;
+        bloques.push(h("div", { clase: "grp" }, grupo), ...del.map((x) => h(
+          "button",
+          {
+            type: "button",
+            clase: "tool",
+            onclick: () => app.ir("ficha", { id: x.id })
+          },
+          h("span", { clase: "icn" }, icono(x.forma)),
+          h("span", {}, h("div", { clase: "cod" }, x.codigo), h("div", { clase: "d" }, detalleHerramienta(x))),
+          x.favorita ? h("span", { clase: "estrella" }, "\u2605") : null
+        )));
+      }
+      if (!total) {
+        bloques.push(h(
+          "div",
+          { clase: "vacio" },
+          "A\xFAn no tienes herramientas. Agrega tus fresas, brocas y machos para elegirlas r\xE1pido al calcular.",
+          h("button", { type: "button", clase: "primario", onclick: () => abrirFormulario(null, () => vistaHerramientas(raiz2)) }, "+ Agregar herramienta")
+        ));
+      } else if (!lista.length) {
+        bloques.push(h("p", { clase: "vacio" }, "No hay herramientas con ese filtro."));
+      }
+      cont.replaceChildren(...bloques);
+    };
+    raiz2.replaceChildren(
+      h(
+        "div",
+        { clase: "top" },
+        h("div", { clase: "logo" }, icono("plana")),
+        h("h1", {}, "CNC"),
+        h("button", { type: "button", clase: "agr", onclick: () => abrirFormulario(null, () => vistaHerramientas(raiz2)) }, "+ Agregar")
+      ),
+      h("h2", {}, "Mis herramientas"),
+      h("p", { clase: "sub" }, total === 1 ? "1 guardada" : `${total} guardadas`),
+      h("label", { clase: "buscar" }, icono("lupa"), h("input", {
+        type: "search",
+        placeholder: "Buscar por c\xF3digo o \xD8\u2026",
+        value: textoLista,
+        oninput: (e) => {
+          textoLista = e.target.value;
+          pintar();
+        }
+      })),
+      chips(["Todas", ...ORDEN_GRUPOS].map((v) => ({ valor: v, texto: v })), filtroLista, (v) => {
+        filtroLista = v;
+        pintar();
+      }),
+      cont
+    );
+    pintar();
+  }
+  function especificaciones(x) {
+    const mh = MATERIALES_HERRAMIENTA[x.materialHerramienta]?.nombre;
+    const mm = (v) => `${fmt(v, 3)} mm`;
+    let filas;
+    if (x.forma === "macho") {
+      const r = buscarRosca(x.rosca);
+      filas = [
+        ["Rosca", r?.nombre],
+        ["Sistema", r?.sistema],
+        ["Paso", mm(r?.paso)],
+        ["Broca previa", `\xD8${fmt(r?.broca, 2)} mm`],
+        ["Tipo", x.tipoMacho === "mano" ? "Mano" : "M\xE1quina"],
+        ["Material", mh]
+      ];
+    } else if (x.forma === "broca") {
+      filas = [["Material", mh], ["Di\xE1metro", mm(x.diametro)], ["Largo \xFAtil", mm(x.largoCorte)], ["Largo total", mm(x.largoTotal)]];
+    } else if (forma(x.forma).enV) {
+      filas = [
+        ["Material", mh],
+        ["Filos", String(x.filos)],
+        ["\xC1ngulo", `${fmt(x.angulo, 1)}\xB0`],
+        ["\xD8 punta", x.diametroPunta > 0 ? mm(x.diametroPunta) : "Punta viva"],
+        ["\xD8 toma", mm(x.diametroToma)],
+        ["Largo total", mm(x.largoTotal)]
+      ];
+    } else {
+      filas = [
+        ["Material", mh],
+        ["Filos", String(x.filos)],
+        ["\xD8 corte / \xD8 toma", `${fmt(x.diametro, 3)} / ${mm(x.diametroToma)}`],
+        ["Largo corte / total", `${fmt(x.largoCorte, 3)} / ${mm(x.largoTotal)}`]
+      ];
+      if (x.forma === "toroidal") filas.push(["Radio punta", mm(x.radio)]);
+      if (x.voladizo > 0) filas.push(["Voladizo habitual", `${mm(x.voladizo)} (${fmt(x.voladizo / x.diametro, 1)}\xD7D)`]);
+    }
+    if (x.marca) filas.push(["Marca", x.marca]);
+    if (x.codigoCatalogo) filas.push(["C\xF3digo cat\xE1logo", x.codigoCatalogo]);
+    if (filas.length % 2) filas.push(["", ""]);
+    return filas;
+  }
+  function vistaFicha(raiz2, param) {
+    const x = app.herramienta(param?.id);
+    if (!x) {
+      app.ir("herramientas");
+      return;
+    }
+    const foto = h("div", { clase: "foto" }, icono(x.forma));
+    if (x.tieneFoto) {
+      leerFoto(x.id).then((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const img = h("img", { alt: `Foto de ${nombreHerramienta(x)}`, src: url, onload: () => URL.revokeObjectURL(url) });
+        foto.replaceChildren(img);
+      }).catch((e) => console.warn("No se pudo leer la foto:", e));
+    }
+    const estrella = h(
+      "button",
+      {
+        type: "button",
+        clase: "ibtn",
+        "aria-label": "Favorita",
+        "aria-pressed": String(x.favorita),
+        onclick: () => {
+          x.favorita = !x.favorita;
+          app.persistir();
+          estrella.textContent = x.favorita ? "\u2605" : "\u2606";
+          estrella.setAttribute("aria-pressed", String(x.favorita));
+          toast(x.favorita ? "Marcada como favorita" : "Quitada de favoritas");
+        }
+      },
+      x.favorita ? "\u2605" : "\u2606"
+    );
+    estrella.classList.add("cod");
+    raiz2.replaceChildren(
+      h(
+        "div",
+        { clase: "top" },
+        h("button", { type: "button", clase: "ibtn", "aria-label": "Volver", onclick: () => app.ir("herramientas") }, "\u2039"),
+        h("h1", {}, "Herramienta"),
+        estrella
+      ),
+      foto,
+      h("span", { clase: "tagcod" }, x.codigo),
+      h("h2", {}, nombreHerramienta(x)),
+      h("p", { clase: "sub" }, detalleHerramienta(x)),
+      h("div", { clase: "specs" }, ...especificaciones(x).map(([k, v]) => h("div", {}, h("div", { clase: "k" }, k), h("div", { clase: "v" }, v ?? "\u2014")))),
+      h("button", { type: "button", clase: "primario", onclick: () => app.ir("calcular", { herramienta: x.id }) }, "Calcular con esta herramienta"),
+      h(
+        "div",
+        { clase: "acc" },
+        h("button", { type: "button", onclick: () => abrirFormulario(x, () => vistaFicha(raiz2, param)) }, "Editar"),
+        h("button", { type: "button", onclick: () => abrirFormulario({ ...x, id: null, favorita: false }, (n2) => app.ir("ficha", { id: n2.id }), { duplicar: x.id }) }, "Duplicar"),
+        botonConfirmar("Borrar", async () => {
+          app.datos.herramientas = app.datos.herramientas.filter((y) => y.id !== x.id);
+          if (app.datos.ultimo.herramienta === x.id) app.datos.ultimo.herramienta = null;
+          app.persistir();
+          if (x.tieneFoto) await borrarFoto(x.id).catch((e) => console.warn(e));
+          toast("Herramienta borrada");
+          app.ir("herramientas");
+        }, "del")
+      )
+    );
+  }
+  var DEFECTO = { forma: "plana", materialHerramienta: "metal_duro", diametroPunta: 0, tipoMacho: "maquina", rosca: "M8x1.25" };
+  function abrirFormulario(base, alGuardar, op = {}) {
+    const editando = Boolean(base?.id);
+    const b = { ...DEFECTO, ...base ?? {} };
+    let codigoManual = Boolean(base?.codigo) && base.codigo !== codigo(b, buscarRosca(b.rosca));
+    let puntaViva = !(b.diametroPunta > 0);
+    let sistema = buscarRosca(b.rosca)?.sistema ?? "M\xE9trica";
+    let foto = { blob: null, quitar: false, url: null };
+    abrirHoja(editando ? "Editar herramienta" : "Nueva herramienta", (cerrar) => {
+      const cuerpo = h("div");
+      const error = h("div", { clase: "error", hidden: true });
+      const codigoInput = h("input", {
+        type: "text",
+        maxLength: 60,
+        "aria-label": "C\xF3digo",
+        oninput: (e) => {
+          codigoManual = e.target.value.trim() !== "";
+          b.codigo = e.target.value;
+        }
+      });
+      const refrescarCodigo = () => {
+        if (codigoManual) return;
+        try {
+          codigoInput.value = codigo(b, buscarRosca(b.rosca));
+        } catch {
+          codigoInput.value = "";
+        }
+      };
+      const zonaFoto = h("div");
+      const pintarFoto = () => {
+        if (foto.url) URL.revokeObjectURL(foto.url);
+        foto.url = foto.blob ? URL.createObjectURL(foto.blob) : null;
+        const opciones = [["\u2317", "C\xF3digo"], ["\u25C7", "Forma"], ["\u25A4", "Etiqueta"]].map(([s2, t]) => h(
+          "label",
+          {},
+          h("b", {}, s2),
+          t,
+          h("input", { type: "file", accept: "image/*", capture: "environment", hidden: true, onchange: alElegirFoto })
+        ));
+        zonaFoto.replaceChildren(
+          h("div", { clase: "paso" }, "Foto (opcional): del c\xF3digo, de la forma o de la etiqueta"),
+          foto.url ? h(
+            "div",
+            { clase: "miniatura" },
+            h("img", { src: foto.url, alt: "Foto de la herramienta" }),
+            "Foto agregada",
+            h("button", { type: "button", onclick: () => {
+              foto = { blob: null, quitar: true, url: foto.url };
+              pintarFoto();
+            } }, "Quitar")
+          ) : h("div", { clase: "foto3" }, ...opciones)
+        );
+      };
+      async function alElegirFoto(e) {
+        const archivo = e.target.files?.[0];
+        if (!archivo) return;
+        try {
+          foto = { blob: await prepararFoto(archivo), quitar: false, url: foto.url };
+          pintarFoto();
+        } catch (err) {
+          toast(err.message || "No se pudo usar la foto.");
+        }
+      }
+      const fuenteFoto = editando ? b.id : op.duplicar;
+      if (fuenteFoto && base?.tieneFoto) {
+        leerFoto(fuenteFoto).then((blob) => {
+          if (blob && !foto.blob) {
+            foto.blob = blob;
+            pintarFoto();
+          }
+        }).catch(() => {
+        });
+      }
+      pintarFoto();
+      const campo = (clave, etiqueta = ETIQUETAS[clave]) => h(
+        "label",
+        { clase: "campo" },
+        h("div", { clase: "k" }, etiqueta),
+        h("input", {
+          type: "text",
+          inputMode: clave === "filos" ? "numeric" : "decimal",
+          value: Number.isFinite(b[clave]) ? fmt(b[clave], 3) : b[clave] ?? "",
+          oninput: (e) => {
+            b[clave] = e.target.value === "" ? "" : leerNumero(e.target.value);
+            refrescarCodigo();
+          }
+        })
+      );
+      const pintar = () => {
+        const f = forma(b.forma);
+        const bloques = [];
+        const matOpc = f.id === "macho" ? ["hss", "metal_duro"] : Object.keys(MATERIALES_HERRAMIENTA);
+        if (!matOpc.includes(b.materialHerramienta)) b.materialHerramienta = matOpc[0];
+        bloques.push(
+          h("div", { clase: "paso" }, "2 \xB7 Material de la herramienta"),
+          chips(matOpc.map((k) => ({ valor: k, texto: MATERIALES_HERRAMIENTA[k].nombre })), b.materialHerramienta, (v) => {
+            b.materialHerramienta = v;
+          })
+        );
+        if (f.id === "macho") {
+          bloques.unshift(h("div", { clase: "avm" }, h("b", {}, "\u26A0 Macho: usar solo en pl\xE1sticos y bronce. "), "En acero e inoxidable se recomienda roscar con fresa de roscar."));
+          const delSistema = ROSCAS.filter((r) => r.sistema === sistema);
+          if (!delSistema.some((r) => r.codigo === b.rosca)) b.rosca = delSistema[0].codigo;
+          const select = h(
+            "select",
+            { "aria-label": "Rosca", onchange: (e) => {
+              b.rosca = e.target.value;
+              info.textContent = infoRosca();
+              refrescarCodigo();
+            } },
+            ...delSistema.map((r) => h("option", { value: r.codigo, selected: r.codigo === b.rosca }, r.nombre))
+          );
+          const infoRosca = () => {
+            const r = buscarRosca(b.rosca);
+            return r ? `Paso ${fmt(r.paso, 3)} mm \xB7 broca previa \xD8${fmt(r.broca, 2)}` : "";
+          };
+          const info = h("div", { clase: "d" }, infoRosca());
+          bloques.push(
+            h("div", { clase: "paso" }, "3 \xB7 Rosca (tabla normalizada)"),
+            chips(SISTEMAS.map((s2) => ({ valor: s2, texto: s2 })), sistema, (v) => {
+              sistema = v;
+              pintar();
+            }),
+            h("label", { clase: "campo" }, h("div", { clase: "k" }, "Designaci\xF3n"), select, info),
+            h("div", { clase: "paso" }, "Tipo"),
+            chips([{ valor: "maquina", texto: "M\xE1quina" }, { valor: "mano", texto: "Mano" }], b.tipoMacho, (v) => {
+              b.tipoMacho = v;
+            })
+          );
+        } else {
+          if (f.enV) {
+            bloques.push(h("div", { clase: "paso" }, "3 \xB7 Tipo de punta"), h(
+              "div",
+              { clase: "punta" },
+              h("button", { type: "button", "aria-pressed": String(puntaViva), onclick: () => {
+                puntaViva = true;
+                b.diametroPunta = 0;
+                refrescarCodigo();
+                pintar();
+              } }, icono("grabado"), "Punta viva (\xD8 0)"),
+              h("button", { type: "button", "aria-pressed": String(!puntaViva), onclick: () => {
+                puntaViva = false;
+                pintar();
+              } }, icono("grabadoPunta"), "Con \xD8 en la punta")
+            ));
+          }
+          const claves = f.campos.filter((c) => !(f.enV && puntaViva && c === "diametroPunta"));
+          bloques.push(
+            h("div", { clase: "paso" }, `${f.enV ? "4" : "3"} \xB7 Medidas (mm)`),
+            h("div", { clase: "campos c3" }, ...claves.map((c) => campo(c, f.id === "broca" && c === "largoCorte" ? "Largo \xFAtil" : f.id === "fresaT" && c === "largoCorte" ? "Espesor" : ETIQUETAS[c])))
+          );
+          if (f.modo === "fresa" && !f.enV) {
+            bloques.push(h(
+              "div",
+              { clase: "campos" },
+              campo("voladizo", "Voladizo habitual (opcional)"),
+              h("div", { clase: "d ayuda" }, "Largo desde el cono hasta la punta. En Calcular se puede cambiar en cada c\xE1lculo.")
+            ));
+          }
+        }
+        bloques.push(
+          h("label", { clase: "codprev" }, h("div", { clase: "k" }, "C\xF3digo (se arma solo \xB7 editable)"), codigoInput),
+          h(
+            "div",
+            { clase: "campos" },
+            h("label", { clase: "campo" }, h("div", { clase: "k" }, "Marca"), h("input", { type: "text", maxLength: 80, value: b.marca ?? "", oninput: (e) => {
+              b.marca = e.target.value;
+            } })),
+            h("label", { clase: "campo" }, h("div", { clase: "k" }, "C\xF3digo cat\xE1logo"), h("input", { type: "text", maxLength: 80, value: b.codigoCatalogo ?? "", oninput: (e) => {
+              b.codigoCatalogo = e.target.value;
+            } }))
+          )
+        );
+        cuerpo.replaceChildren(...bloques);
+        refrescarCodigo();
+      };
+      const rejilla = h("div", { clase: "formas" }, ...FORMAS.map((f) => h("button", {
+        type: "button",
+        "data-forma": f.id,
+        "aria-pressed": String(f.id === b.forma),
+        onclick: () => {
+          b.forma = f.id;
+          if (f.id === "macho") b.materialHerramienta = "hss";
+          for (const x of rejilla.children) x.setAttribute("aria-pressed", String(x.dataset.forma === f.id));
+          if (!codigoManual) b.codigo = "";
+          pintar();
+        }
+      }, icono(f.id), f.nombre)));
+      async function guardarHerramienta() {
+        error.hidden = true;
+        try {
+          const datos2 = {
+            ...b,
+            codigo: codigoManual ? codigoInput.value : "",
+            id: b.id || nuevoId("h"),
+            diametroPunta: puntaViva ? 0 : b.diametroPunta,
+            tieneFoto: Boolean(foto.blob)
+          };
+          const nueva = normalizarHerramienta(datos2);
+          const repetida = app.datos.herramientas.find((y) => y.codigo.toLowerCase() === nueva.codigo.toLowerCase() && y.id !== nueva.id);
+          if (repetida) throw new ErrorDatos(`Ya existe una herramienta con el c\xF3digo ${nueva.codigo}.`);
+          if (foto.blob) await guardarFoto(nueva.id, foto.blob);
+          else if (foto.quitar && editando) await borrarFoto(nueva.id);
+          const i = app.datos.herramientas.findIndex((y) => y.id === nueva.id);
+          if (i >= 0) app.datos.herramientas[i] = nueva;
+          else app.datos.herramientas.push(nueva);
+          app.persistir();
+          if (foto.url) URL.revokeObjectURL(foto.url);
+          cerrar();
+          toast(editando ? "Herramienta actualizada" : "Herramienta guardada");
+          alGuardar?.(nueva);
+        } catch (err) {
+          error.textContent = err instanceof ErrorDatos ? err.message : "No se pudo guardar. Revisa los datos.";
+          error.hidden = false;
+          if (!(err instanceof ErrorDatos)) console.error(err);
+        }
+      }
+      pintar();
+      return h(
+        "div",
+        {},
+        zonaFoto,
+        h("div", { clase: "paso" }, "1 \xB7 Forma"),
+        rejilla,
+        cuerpo,
+        error,
+        h("button", { type: "button", clase: "primario", onclick: guardarHerramienta }, editando ? "Guardar cambios" : "Guardar herramienta")
+      );
+    });
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/vista-materiales.js
+  var TIPOS = [
+    { valor: "plastico", texto: "Pl\xE1stico", grupo: "Pl\xE1sticos" },
+    { valor: "metal", texto: "Metal", grupo: "Metales" },
+    { valor: "otro", texto: "Otro", grupo: "Otros" }
+  ];
+  var COLORES = ["#f4f4ee", "#e9e2c9", "#9aa0a6", "#2b2b2b", "#3f8f4f", "#3a6fd8", "#b98a4a", "#c08a3e", "#d9a400", "#c0392b"];
+  var VALORES = [
+    { clave: "vcFresa", etq: "Vc (m/min)", grupo: "fresa" },
+    { clave: "fz10", etq: "fz \xD810 (mm/diente)", grupo: "fresa" },
+    { clave: "vcBroca", etq: "Vc (m/min)", grupo: "broca" },
+    { clave: "f10", etq: "f \xD810 (mm/vuelta)", grupo: "broca" },
+    { clave: "vcMacho", etq: "Vc (m/min)", grupo: "macho" }
+  ];
+  var filtro = "todos";
+  var texto = "";
+  function punto(color, clase = "punto") {
+    const p = h("span", { clase });
+    p.style.background = color;
+    return p;
+  }
+  var insignia = (m2) => h("span", { clase: `badge ${m2.confirmado ? "b-ok" : "b-sug"}` }, m2.confirmado ? "\u2713 Confirmado" : "Sugerido");
+  function vistaMateriales(raiz2) {
+    const cont = h("div");
+    const total = app.datos.materiales.length;
+    const confirmados = app.datos.materiales.filter((m2) => m2.confirmado).length;
+    const pintar = () => {
+      const t = texto.toLowerCase();
+      const lista = app.datos.materiales.filter((m2) => filtro === "todos" || (filtro === "confirmados" ? m2.confirmado : m2.tipo === filtro)).filter((m2) => !t || `${m2.nombre} ${m2.familia}`.toLowerCase().includes(t));
+      const bloques = [];
+      for (const tipo of TIPOS) {
+        const del = lista.filter((m2) => m2.tipo === tipo.valor).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+        if (!del.length) continue;
+        bloques.push(h("div", { clase: "grp" }, tipo.grupo), ...del.map((m2) => h(
+          "button",
+          {
+            type: "button",
+            clase: "tool",
+            onclick: () => app.ir("fichaMaterial", { id: m2.id })
+          },
+          h("span", { clase: "icn" }, punto(m2.color, "punto grande")),
+          h(
+            "span",
+            {},
+            h("div", { clase: "v" }, m2.nombre),
+            h("div", { clase: "d" }, m2.familia || tipo.texto),
+            h("div", { clase: "d" }, `Vc ${fmt(m2.vcFresa)} \xB7 fz ${fmt(m2.fz10, 3)}`)
+          ),
+          h("span", { clase: "der" }, insignia(m2))
+        )));
+      }
+      if (!lista.length) bloques.push(h("p", { clase: "vacio" }, "No hay materiales con ese filtro."));
+      cont.replaceChildren(...bloques);
+    };
+    raiz2.replaceChildren(
+      h(
+        "div",
+        { clase: "top" },
+        h("div", { clase: "logo" }, icono("plana")),
+        h("h1", {}, "CNC"),
+        h("button", { type: "button", clase: "agr", onclick: () => abrirFormularioMaterial(null, (m2) => app.ir("fichaMaterial", { id: m2.id })) }, "+ Agregar")
+      ),
+      h("h2", {}, "Materiales"),
+      h("p", { clase: "sub" }, `${total} materiales \xB7 ${confirmados} ${confirmados === 1 ? "confirmado" : "confirmados"}`),
+      h("label", { clase: "buscar" }, icono("lupa"), h("input", {
+        type: "search",
+        placeholder: "Buscar material\u2026",
+        value: texto,
+        oninput: (e) => {
+          texto = e.target.value;
+          pintar();
+        }
+      })),
+      chips([
+        { valor: "todos", texto: "Todos" },
+        { valor: "plastico", texto: "Pl\xE1sticos" },
+        { valor: "metal", texto: "Metales" },
+        { valor: "otro", texto: "Otros" },
+        { valor: "confirmados", texto: "\u2605 Confirmados" }
+      ], filtro, (v) => {
+        filtro = v;
+        pintar();
+      }),
+      cont
+    );
+    pintar();
+  }
+  function vistaFichaMaterial(raiz2, param) {
+    const m2 = app.material(param?.id);
+    if (!m2) {
+      app.ir("materiales");
+      return;
+    }
+    const base = MATERIALES_BASE.find((x) => x.id === m2.id);
+    const cambiado = base && VALORES.some((v) => base[v.clave] !== m2[v.clave]);
+    const tipo = TIPOS.find((t) => t.valor === m2.tipo)?.texto ?? "Pl\xE1stico";
+    const foto = h("div", { clase: "foto foto-mat" }, punto(m2.color, "punto enorme"));
+    if (m2.tieneFoto) {
+      leerFoto(m2.id).then((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        foto.replaceChildren(h("img", { alt: `Etiqueta de ${m2.nombre}`, src: url, onload: () => URL.revokeObjectURL(url) }));
+      }).catch((e) => console.warn("No se pudo leer la foto:", e));
+    }
+    const sw = h("button", {
+      type: "button",
+      clase: "sw",
+      role: "switch",
+      "aria-checked": String(m2.confirmado),
+      "aria-label": "Valores confirmados en mi taller",
+      onclick: () => {
+        m2.confirmado = !m2.confirmado;
+        app.persistir();
+        toast(m2.confirmado ? "Material confirmado" : "Marcado como sugerido");
+        vistaFichaMaterial(raiz2, param);
+      }
+    });
+    const fila2 = (titulo, ico, pares) => [
+      h("div", { clase: "sec" }, icono(ico), titulo),
+      h("div", { clase: "specs" }, ...pares.map(([k, v]) => h("div", {}, h("div", { clase: "k" }, k), h("div", { clase: "v" }, v))))
+    ];
+    raiz2.replaceChildren(...[
+      h(
+        "div",
+        { clase: "top" },
+        h("button", { type: "button", clase: "ibtn", "aria-label": "Volver", onclick: () => app.ir("materiales") }, "\u2039"),
+        h("h1", {}, "Material")
+      ),
+      foto,
+      h("div", { clase: "titulo-mat" }, h("h2", {}, m2.nombre), insignia(m2)),
+      h("p", { clase: "sub" }, [m2.familia, tipo].filter(Boolean).join(" \xB7 ")),
+      ...fila2("Fresas (metal duro)", "plana", [["Vc", `${fmt(m2.vcFresa)} m/min`], ["fz para \xD810", `${fmt(m2.fz10, 3)} mm/diente`]]),
+      ...fila2("Brocas (metal duro)", "broca", [["Vc", `${fmt(m2.vcBroca)} m/min`], ["f para \xD810", `${fmt(m2.f10, 3)} mm/vuelta`]]),
+      ...fila2("Machos (HSS)", "macho", [["Vc", `${fmt(m2.vcMacho)} m/min`], ["Avance", "paso \xD7 RPM"]]),
+      h("p", { clase: "d nota" }, "El avance de referencia es para \xD810 mm; la app lo ajusta seg\xFAn el di\xE1metro de cada herramienta."),
+      h(
+        "div",
+        { clase: "specs" },
+        h("div", {}, h("div", { clase: "k" }, "Refrigeraci\xF3n"), h("div", { clase: "v" }, REFRIGERACION[m2.refrigeracion] ?? "Aire")),
+        h("div", {}, h("div", { clase: "k" }, "Notas"), h("div", { clase: "v notas" }, m2.notas || "\u2014"))
+      ),
+      h("div", { clase: "hrow" }, h(
+        "div",
+        {},
+        h("div", { clase: "v" }, "Valores confirmados en mi taller"),
+        h("div", { clase: "d" }, "Quita la etiqueta \u201CSugerido\u201D en todas las listas")
+      ), sw),
+      h("button", { type: "button", clase: "primario", onclick: () => {
+        app.datos.ultimo.material = m2.id;
+        app.persistir();
+        app.ir("calcular");
+      } }, "Calcular con este material"),
+      h(
+        "div",
+        { clase: "acc" },
+        h("button", { type: "button", onclick: () => abrirFormularioMaterial(m2, () => vistaFichaMaterial(raiz2, param)) }, "Editar"),
+        h("button", { type: "button", onclick: () => abrirFormularioMaterial({ ...m2, id: null, nombre: `${m2.nombre} (copia)`, confirmado: false }, (n2) => app.ir("fichaMaterial", { id: n2.id }), { duplicar: m2.id }) }, "Duplicar"),
+        botonConfirmar("Borrar", async () => {
+          if (app.datos.materiales.length <= 1) {
+            toast("Debe quedar al menos un material.");
+            return;
+          }
+          app.datos.materiales = app.datos.materiales.filter((x) => x.id !== m2.id);
+          if (app.datos.ultimo.material === m2.id) app.datos.ultimo.material = app.datos.materiales[0].id;
+          app.persistir();
+          if (m2.tieneFoto) await borrarFoto(m2.id).catch((e) => console.warn(e));
+          toast("Material borrado");
+          app.ir("materiales");
+        }, "del")
+      ),
+      cambiado ? botonConfirmar("\u21BA Volver a los valores sugeridos del cat\xE1logo", () => {
+        for (const v of VALORES) m2[v.clave] = base[v.clave];
+        m2.confirmado = false;
+        app.persistir();
+        toast("Valores de cat\xE1logo restaurados");
+        vistaFichaMaterial(raiz2, param);
+      }, "enlace") : null
+    ].filter(Boolean));
+  }
+  function abrirFormularioMaterial(base, alGuardar, op = {}) {
+    const editando = Boolean(base?.id);
+    const b = { tipo: "plastico", refrigeracion: "aire", notas: "", color: COLORES[1], vcFresa: 250, fz10: 0.12, vcBroca: 120, f10: 0.15, vcMacho: 12, confirmado: true, ...base ?? {} };
+    let foto = { blob: null, quitar: false, url: null };
+    abrirHoja(editando ? "Editar material" : "Nuevo material", (cerrar) => {
+      const error = h("div", { clase: "error", hidden: true });
+      const zonaFoto = h("div");
+      const pintarFoto = () => {
+        if (foto.url) URL.revokeObjectURL(foto.url);
+        foto.url = foto.blob ? URL.createObjectURL(foto.blob) : null;
+        zonaFoto.replaceChildren(foto.url ? h(
+          "div",
+          { clase: "miniatura" },
+          h("img", { src: foto.url, alt: "Foto de la etiqueta" }),
+          "Foto de la etiqueta",
+          h("button", { type: "button", onclick: () => {
+            foto = { blob: null, quitar: true, url: foto.url };
+            pintarFoto();
+          } }, "Quitar")
+        ) : h(
+          "label",
+          { clase: "fotobtn" },
+          h("b", {}, "\u25A4"),
+          h("span", {}, "Foto de la etiqueta ", h("i", {}, "(opcional)")),
+          h("input", { type: "file", accept: "image/*", capture: "environment", hidden: true, onchange: alElegirFoto })
+        ));
+      };
+      async function alElegirFoto(e) {
+        const archivo = e.target.files?.[0];
+        if (!archivo) return;
+        try {
+          foto = { blob: await prepararFoto(archivo), quitar: false, url: foto.url };
+          pintarFoto();
+        } catch (err) {
+          toast(err.message || "No se pudo usar la foto.");
+        }
+      }
+      const fuente2 = editando ? b.id : op.duplicar;
+      if (fuente2 && base?.tieneFoto) leerFoto(fuente2).then((blob) => {
+        if (blob && !foto.blob) {
+          foto.blob = blob;
+          pintarFoto();
+        }
+      }).catch(() => {
+      });
+      pintarFoto();
+      const texto3 = (clave, etiqueta, ph) => h(
+        "label",
+        { clase: "campo" },
+        h("div", { clase: "k" }, etiqueta),
+        h("input", { type: "text", maxLength: 80, value: b[clave] ?? "", placeholder: ph ?? "", oninput: (e) => {
+          b[clave] = e.target.value;
+        } })
+      );
+      const numero = (v) => h(
+        "label",
+        { clase: "campo" },
+        h("div", { clase: "k" }, v.etq),
+        h("input", {
+          type: "text",
+          inputMode: "decimal",
+          value: Number.isFinite(b[v.clave]) ? fmt(b[v.clave], 3) : "",
+          oninput: (e) => {
+            b[v.clave] = leerNumero(e.target.value);
+          }
+        })
+      );
+      const grupo = (g) => VALORES.filter((v) => v.grupo === g).map(numero);
+      const colores = h("div", { clase: "colores", role: "radiogroup", "aria-label": "Color" });
+      const pintarColores = () => colores.replaceChildren(...COLORES.map((c) => {
+        const bt = h("button", {
+          type: "button",
+          role: "radio",
+          "aria-checked": String(c === b.color),
+          "aria-label": `Color ${c}`,
+          onclick: () => {
+            b.color = c;
+            pintarColores();
+          }
+        });
+        bt.style.background = c;
+        return bt;
+      }));
+      pintarColores();
+      const sw = h("button", {
+        type: "button",
+        clase: "sw",
+        role: "switch",
+        "aria-checked": String(b.confirmado),
+        "aria-label": "Valores confirmados",
+        onclick: () => {
+          b.confirmado = !b.confirmado;
+          sw.setAttribute("aria-checked", String(b.confirmado));
+        }
+      });
+      async function guardarMaterial() {
+        error.hidden = true;
+        try {
+          const nuevo = normalizarMaterial({ ...b, id: b.id || nuevoId("m"), tieneFoto: Boolean(foto.blob) });
+          const repetido = app.datos.materiales.find((x) => x.nombre.toLowerCase() === nuevo.nombre.toLowerCase() && x.id !== nuevo.id);
+          if (repetido) throw new ErrorDatos(`Ya existe un material llamado "${nuevo.nombre}".`);
+          if (foto.blob) await guardarFoto(nuevo.id, foto.blob);
+          else if (foto.quitar && editando) await borrarFoto(nuevo.id);
+          const i = app.datos.materiales.findIndex((x) => x.id === nuevo.id);
+          if (i >= 0) app.datos.materiales[i] = nuevo;
+          else app.datos.materiales.push(nuevo);
+          app.persistir();
+          if (foto.url) URL.revokeObjectURL(foto.url);
+          cerrar();
+          toast(editando ? "Material actualizado" : "Material guardado");
+          alGuardar?.(nuevo);
+        } catch (err) {
+          error.textContent = err instanceof ErrorDatos ? err.message : "No se pudo guardar. Revisa los datos.";
+          error.hidden = false;
+          if (!(err instanceof ErrorDatos)) console.error(err);
+        }
+      }
+      return h(
+        "div",
+        {},
+        zonaFoto,
+        h("div", { clase: "campos" }, texto3("nombre", "Nombre", "Ej: Polipropileno"), texto3("familia", "Familia", "Ej: PP")),
+        h("div", { clase: "paso" }, "Tipo"),
+        chips(TIPOS.map((t) => ({ valor: t.valor, texto: t.texto })), b.tipo, (v) => {
+          b.tipo = v;
+        }),
+        h("div", { clase: "paso" }, "Color (para reconocerlo en la lista)"),
+        colores,
+        h("div", { clase: "sec" }, icono("plana"), "Fresas"),
+        h("div", { clase: "campos" }, ...grupo("fresa")),
+        h("div", { clase: "sec" }, icono("broca"), "Brocas"),
+        h("div", { clase: "campos" }, ...grupo("broca")),
+        h("div", { clase: "sec" }, icono("macho"), "Machos"),
+        h("div", { clase: "campos" }, ...grupo("macho")),
+        h("div", { clase: "paso" }, "Refrigeraci\xF3n"),
+        chips(Object.entries(REFRIGERACION).map(([valor, texto4]) => ({ valor, texto: texto4 })), b.refrigeracion, (v) => {
+          b.refrigeracion = v;
+        }),
+        h(
+          "label",
+          { clase: "campo" },
+          h("div", { clase: "k" }, "Notas (opcional)"),
+          h("input", {
+            type: "text",
+            maxLength: 300,
+            value: b.notas ?? "",
+            placeholder: "Ej: se deforma con calor, sujetar sin apretar de m\xE1s",
+            oninput: (e) => {
+              b.notas = e.target.value;
+            }
+          })
+        ),
+        h("div", { clase: "hrow" }, h(
+          "div",
+          {},
+          h("div", { clase: "v" }, "Valores confirmados en mi taller"),
+          h("div", { clase: "d" }, "Quita la etiqueta \u201CSugerido\u201D")
+        ), sw),
+        error,
+        h("button", { type: "button", clase: "primario", onclick: guardarMaterial }, editando ? "Guardar cambios" : "Guardar material")
+      );
+    });
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/compartir.js
+  var ANCHO = 1240;
+  var ALTO = 1754;
+  var VERDE = "#3f5308";
+  var LIMA = "#c8e05a";
+  var TINTA = "#151812";
+  var GRIS = "#6b7264";
+  var LINEA = "#dde2d3";
+  function textoHoja(d) {
+    const lineas = [
+      "*CNC \xB7 Par\xE1metros de corte*",
+      `Herramienta: ${d.codigo} (${d.formaNombre}${d.detalle ? `, ${d.detalle}` : ""})`,
+      `Material: ${d.material}${d.refrigeracion ? ` \xB7 ${d.refrigeracion}` : ""}`,
+      `M\xE1quina: ${d.maquina}`,
+      `*RPM: ${fmt(d.rpm)}*`,
+      `*Avance: ${fmt(d.vf, 1)} mm/min*`,
+      ...d.filas.map(([k, v]) => `${k}: ${v}`),
+      ...d.avisos.map((a) => `\u26A0 ${a}`),
+      d.fecha.toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short", hourCycle: "h23" })
+    ];
+    return lineas.join("\n");
+  }
+  function imagenForma(forma2) {
+    return new Promise((resolver) => {
+      const simbolo = document.getElementById(`i-${forma2}`) ?? document.getElementById("i-otra");
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="480" height="480" color="${VERDE}">${simbolo?.innerHTML ?? ""}</svg>`;
+      const img = new Image();
+      img.onload = () => resolver(img);
+      img.onerror = () => resolver(null);
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    });
+  }
+  function partir(ctx, texto3, ancho) {
+    const palabras = String(texto3).split(" ");
+    const lineas = [];
+    let actual = "";
+    for (const p of palabras) {
+      const prueba = actual ? `${actual} ${p}` : p;
+      if (ctx.measureText(prueba).width > ancho && actual) {
+        lineas.push(actual);
+        actual = p;
+      } else actual = prueba;
+    }
+    if (actual) lineas.push(actual);
+    return lineas;
+  }
+  async function dibujarHoja(d) {
+    const c = document.createElement("canvas");
+    c.width = ANCHO;
+    c.height = ALTO;
+    const x = c.getContext("2d");
+    const fuente2 = (peso, tam) => `${peso} ${tam}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+    const M2 = 90;
+    x.fillStyle = "#ffffff";
+    x.fillRect(0, 0, ANCHO, ALTO);
+    x.fillStyle = LIMA;
+    x.fillRect(0, 0, ANCHO, 18);
+    x.fillStyle = TINTA;
+    x.font = fuente2(800, 54);
+    x.fillText("CNC \xB7 Hoja de par\xE1metros", M2, 120);
+    x.fillStyle = GRIS;
+    x.font = fuente2(400, 30);
+    x.fillText(`${d.fecha.toLocaleString("es-CL", { dateStyle: "long", timeStyle: "short", hourCycle: "h23" })} \xB7 ${d.maquina}`, M2, 170);
+    const img = await imagenForma(d.forma);
+    x.fillStyle = "#eef3d6";
+    x.beginPath();
+    x.roundRect(M2, 220, 330, 330, 36);
+    x.fill();
+    if (img) x.drawImage(img, M2 + 25, 245, 280, 280);
+    x.fillStyle = TINTA;
+    x.font = fuente2(800, 46);
+    let y = 290;
+    for (const l of partir(x, d.codigo, ANCHO - M2 * 2 - 370)) {
+      x.fillText(l, M2 + 370, y);
+      y += 56;
+    }
+    x.fillStyle = GRIS;
+    x.font = fuente2(400, 32);
+    x.fillText(d.formaNombre, M2 + 370, y + 6);
+    if (d.detalle) x.fillText(d.detalle, M2 + 370, y + 50);
+    x.fillStyle = TINTA;
+    x.font = fuente2(600, 34);
+    x.fillText(`${d.material}${d.refrigeracion ? ` \xB7 ${d.refrigeracion}` : ""}`, M2 + 370, y + 120);
+    y = 620;
+    const caja = (cx, titulo, valor, unidad) => {
+      x.fillStyle = "#f4f6ee";
+      x.beginPath();
+      x.roundRect(cx, y, 515, 210, 30);
+      x.fill();
+      x.fillStyle = GRIS;
+      x.font = fuente2(500, 30);
+      x.fillText(titulo, cx + 36, y + 58);
+      x.fillStyle = TINTA;
+      x.font = fuente2(800, 96);
+      x.fillText(valor, cx + 36, y + 165);
+      if (unidad) {
+        const w = x.measureText(valor).width;
+        x.fillStyle = GRIS;
+        x.font = fuente2(500, 30);
+        x.fillText(unidad, cx + 46 + w, y + 165);
+      }
+    };
+    caja(M2, "RPM", fmt(d.rpm));
+    caja(M2 + 545, "Avance", fmt(d.vf, 1), "mm/min");
+    y = 900;
+    x.font = fuente2(400, 32);
+    for (const [k, v] of d.filas) {
+      x.strokeStyle = LINEA;
+      x.lineWidth = 2;
+      x.beginPath();
+      x.moveTo(M2, y + 22);
+      x.lineTo(ANCHO - M2, y + 22);
+      x.stroke();
+      x.fillStyle = GRIS;
+      x.font = fuente2(400, 32);
+      x.fillText(k, M2, y);
+      x.fillStyle = TINTA;
+      x.font = fuente2(700, 32);
+      const w = x.measureText(v).width;
+      x.fillText(v, ANCHO - M2 - w, y);
+      y += 74;
+    }
+    if (d.avisos.length) {
+      y += 20;
+      x.font = fuente2(500, 28);
+      for (const a of d.avisos) {
+        const lineas = partir(x, `\u26A0 ${a}`, ANCHO - M2 * 2 - 40);
+        x.fillStyle = "#fff4dc";
+        x.beginPath();
+        x.roundRect(M2, y - 38, ANCHO - M2 * 2, lineas.length * 38 + 26, 16);
+        x.fill();
+        x.fillStyle = "#8a5a00";
+        for (const l of lineas) {
+          x.fillText(l, M2 + 20, y);
+          y += 38;
+        }
+        y += 36;
+        if (y > ALTO - 160) break;
+      }
+    }
+    x.fillStyle = GRIS;
+    x.font = fuente2(400, 24);
+    x.fillText("Valores calculados con la app CNC. Verif\xEDcalos en la m\xE1quina antes de producir.", M2, ALTO - 70);
+    return c;
+  }
+  function pdfDesdeJpegs(paginas) {
+    const enc = new TextEncoder();
+    const W = 595.28;
+    const H = 841.89;
+    const partes = [];
+    const offsets = [];
+    let largo = 0;
+    const agregar = (dato) => {
+      const b = typeof dato === "string" ? enc.encode(dato) : dato;
+      partes.push(b);
+      largo += b.length;
+    };
+    const objeto = (n2, cuerpo) => {
+      offsets[n2] = largo;
+      agregar(`${n2} 0 obj
+`);
+      for (const p of [].concat(cuerpo)) agregar(p);
+      agregar("\nendobj\n");
+    };
+    const contenido = `q ${W} 0 0 ${H} 0 0 cm /Im1 Do Q`;
+    const idPag = (i) => 3 + i * 3;
+    agregar("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+    objeto(1, "<< /Type /Catalog /Pages 2 0 R >>");
+    objeto(2, `<< /Type /Pages /Kids [${paginas.map((_, i) => `${idPag(i)} 0 R`).join(" ")}] /Count ${paginas.length} >>`);
+    paginas.forEach((pg, i) => {
+      const n2 = idPag(i);
+      objeto(n2, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im1 ${n2 + 1} 0 R >> >> /Contents ${n2 + 2} 0 R >>`);
+      objeto(n2 + 1, [`<< /Type /XObject /Subtype /Image /Width ${pg.ancho} /Height ${pg.alto} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${pg.bytes.length} >>
+stream
+`, pg.bytes, "\nendstream"]);
+      objeto(n2 + 2, `<< /Length ${contenido.length} >>
+stream
+${contenido}
+endstream`);
+    });
+    const total = 3 + paginas.length * 3;
+    const inicioXref = largo;
+    let xref = `xref
+0 ${total}
+0000000000 65535 f 
+`;
+    for (let n2 = 1; n2 < total; n2 += 1) xref += `${String(offsets[n2]).padStart(10, "0")} 00000 n 
+`;
+    agregar(xref);
+    agregar(`trailer
+<< /Size ${total} /Root 1 0 R >>
+startxref
+${inicioXref}
+%%EOF`);
+    return new Blob(partes, { type: "application/pdf" });
+  }
+  function pdfDesdeJpeg(jpeg, anchoPx, altoPx) {
+    return pdfDesdeJpegs([{ bytes: jpeg, ancho: anchoPx, alto: altoPx }]);
+  }
+  async function jpegDeCanvas(canvas) {
+    const blob = await new Promise((ok, mal) => canvas.toBlob((b) => b ? ok(b) : mal(new Error("No se pudo crear la imagen.")), "image/jpeg", 0.9));
+    return { blob, bytes: new Uint8Array(await blob.arrayBuffer()) };
+  }
+  async function generarArchivos(canvas) {
+    const jpeg = await new Promise((ok, mal) => canvas.toBlob((b) => b ? ok(b) : mal(new Error("No se pudo crear la imagen.")), "image/jpeg", 0.9));
+    const bytes = new Uint8Array(await jpeg.arrayBuffer());
+    return { jpeg, pdf: pdfDesdeJpeg(bytes, canvas.width, canvas.height) };
+  }
+  var nombreArchivo = (d) => `CNC_${d.codigo.replace(/Ø/g, "").replace(/\s*x\s*/g, "x").replace(/[^\w.-]+/g, "_").replace(/_+/g, "_")}.pdf`;
+  var compartirPdf = (pdf, d) => compartirArchivo(pdf, nombreArchivo(d), "Par\xE1metros de corte");
+  async function compartirArchivo(blob, nombre, titulo) {
+    const archivo = new File([blob], nombre, { type: blob.type });
+    try {
+      if (navigator.canShare?.({ files: [archivo] })) {
+        await navigator.share({ files: [archivo], title: titulo });
+        return;
+      }
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      console.warn("No se pudo compartir el archivo:", error);
+    }
+    const url = URL.createObjectURL(blob);
+    const a = h("a", { href: url, download: nombre });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4e3);
+    toast(`${nombre} guardado en Descargas`);
+  }
+  async function copiarTexto(texto3, respaldo) {
+    try {
+      await navigator.clipboard.writeText(texto3);
+      toast("Texto copiado");
+    } catch {
+      respaldo.hidden = false;
+      respaldo.select();
+      toast("Mant\xE9n presionado el texto y elige Copiar");
+    }
+  }
+  function abrirCompartir(d) {
+    const texto3 = textoHoja(d);
+    let archivos = null;
+    const vista = h("div", { clase: "pdf-vista" }, h("div", { clase: "vacio" }, "Preparando la hoja\u2026"));
+    const respaldo = h("textarea", { clase: "respaldo", readOnly: true, hidden: true, rows: 6, "aria-label": "Texto para copiar" });
+    respaldo.value = texto3;
+    dibujarHoja(d).then(generarArchivos).then((r) => {
+      archivos = r;
+      const url = URL.createObjectURL(r.jpeg);
+      vista.replaceChildren(h("img", { src: url, alt: `Hoja de par\xE1metros de ${d.codigo}`, onload: () => URL.revokeObjectURL(url) }));
+    }).catch((e) => {
+      console.error(e);
+      vista.replaceChildren(h("div", { clase: "error" }, "No se pudo preparar el PDF. Puedes enviar el texto por WhatsApp."));
+    });
+    const opcion = (ico, clase, titulo, sub, accion, extra = {}) => h(extra.href ? "a" : "button", {
+      clase: "op",
+      type: extra.href ? void 0 : "button",
+      onclick: accion,
+      ...extra
+    }, h("span", { clase: `ic ${clase}` }, ico), h("span", {}, titulo, h("small", {}, sub)));
+    abrirHoja("Compartir par\xE1metros", () => h(
+      "div",
+      {},
+      vista,
+      opcion(
+        "\u2706",
+        "wsp",
+        "Enviar por WhatsApp",
+        "Texto con los par\xE1metros",
+        null,
+        { href: `https://wa.me/?text=${encodeURIComponent(texto3)}`, target: "_blank", rel: "noopener noreferrer" }
+      ),
+      opcion("\u21E9", "lima", "Compartir PDF", "Con el dibujo de la herramienta", () => {
+        if (!archivos) {
+          toast("La hoja a\xFAn se est\xE1 preparando\u2026");
+          return;
+        }
+        compartirPdf(archivos.pdf, d);
+      }),
+      opcion("\u29C9", "gris", "Copiar texto", "Para pegar en otro chat o correo", () => copiarTexto(texto3, respaldo)),
+      respaldo
+    ));
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/vista-historial.js
+  var texto2 = "";
+  function crearRegistro(c) {
+    return normalizarRegistro({
+      id: nuevoId("c"),
+      fecha: (/* @__PURE__ */ new Date()).toISOString(),
+      herramientaId: c.herr.id,
+      codigo: c.herr.codigo,
+      forma: c.herr.forma,
+      materialId: c.mat.id,
+      materialNombre: c.mat.nombre,
+      maquinaId: c.maq.id,
+      maquinaNombre: c.maq.nombre,
+      estrategia: c.estrategia,
+      manual: c.manual,
+      corte: c.corte,
+      resultado: c.resultado
+    });
+  }
+  function hojaDesdeRegistro(r, avisos = []) {
+    const res = r.resultado;
+    const f = forma(r.forma);
+    const herr = app.herramienta(r.herramientaId);
+    const mat = app.material(r.materialId);
+    const filas = [["Vc", `${fmt(res.vc, 1)} m/min`]];
+    if (f.modo === "fresa") {
+      filas.push(["fz", `${fmt(res.avance, 3)} mm/diente`]);
+      if (res.filos) filas.push(["Filos", String(res.filos)]);
+    } else if (f.modo === "broca") {
+      filas.push(["f", `${fmt(res.avance, 3)} mm/vuelta`]);
+    } else {
+      const rosca = buscarRosca(r.codigo);
+      if (rosca) filas.push(["Paso", `${fmt(rosca.paso, 3)} mm`], ["Broca previa", `\xD8${fmt(rosca.broca, 2)} mm`]);
+    }
+    if (r.estrategia) filas.push(["Estrategia", ESTRATEGIAS[r.estrategia]?.nombre ?? ""]);
+    if (res.ae !== null && res.ap !== null) {
+      filas.push(["ae / ap", `${fmt(res.ae, 1)} mm (${fmt(res.ae / res.diametro * 100, 0)} % del \xD8) / ${fmt(res.ap, 1)} mm`]);
+    }
+    if (res.voladizo !== null) filas.push(["Voladizo", `${fmt(res.voladizo, 1)} mm (${fmt(res.voladizo / res.diametro, 1)}\xD7D)`]);
+    if (res.profundidad !== null) filas.push(["Profundidad / \xD8 efectivo", `${fmt(res.profundidad, 2)} mm / ${fmt(res.diametro, 2)} mm`]);
+    return {
+      fecha: new Date(r.fecha),
+      maquina: r.maquinaNombre,
+      forma: r.forma,
+      formaNombre: herr ? nombreHerramienta(herr) : f.nombre,
+      codigo: r.codigo,
+      detalle: herr ? detalleHerramienta(herr).split(" \xB7 ").slice(1).join(" \xB7 ") : "",
+      material: r.materialNombre,
+      refrigeracion: mat ? REFRIGERACION[mat.refrigeracion] : "",
+      rpm: res.rpm,
+      vf: res.vf,
+      filas,
+      avisos
+    };
+  }
+  function guardarEnHistorial(c) {
+    const reg = crearRegistro(c);
+    if (!reg) {
+      toast("No se pudo guardar este c\xE1lculo.");
+      return;
+    }
+    app.datos.historial = [reg, ...app.datos.historial ?? []].slice(0, MAX_HISTORIAL);
+    app.persistir();
+  }
+  function nombreDia(fecha) {
+    const d = new Date(fecha);
+    const hoy = /* @__PURE__ */ new Date();
+    const soloDia = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const dif = Math.round((soloDia(hoy) - soloDia(d)) / 864e5);
+    if (dif === 0) return "Hoy";
+    if (dif === 1) return "Ayer";
+    return d.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" });
+  }
+  function detalle(r) {
+    const partes = [r.materialNombre, r.maquinaNombre];
+    if (r.estrategia) partes.push(ESTRATEGIAS[r.estrategia]?.nombre);
+    partes.push(new Date(r.fecha).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }));
+    return partes.filter(Boolean).join(" \xB7 ");
+  }
+  function vistaHistorial(raiz2) {
+    const cont = h("div");
+    const lista = app.datos.historial ?? [];
+    const pintar = () => {
+      const t = texto2.toLowerCase();
+      const filtrados = lista.filter((r) => !t || `${r.codigo} ${r.materialNombre} ${r.maquinaNombre}`.toLowerCase().includes(t));
+      const bloques = [];
+      let diaActual = null;
+      for (const r of filtrados) {
+        const dia = nombreDia(r.fecha);
+        if (dia !== diaActual) {
+          bloques.push(h("div", { clase: "grp" }, dia));
+          diaActual = dia;
+        }
+        const existe = Boolean(app.herramienta(r.herramientaId));
+        const res = r.resultado;
+        const extra = [];
+        if (res.ae !== null && res.ap !== null) extra.push(`ae ${fmt(res.ae, 1)} \xB7 ap ${fmt(res.ap, 1)}`);
+        if (res.profundidad !== null) extra.push(`prof. ${fmt(res.profundidad, 2)}`);
+        bloques.push(h(
+          "div",
+          { clase: "hfila" },
+          h(
+            "button",
+            {
+              type: "button",
+              clase: "hrow hist",
+              "aria-label": `Repetir c\xE1lculo ${r.codigo}`,
+              onclick: () => {
+                if (!cargarCalculo(r)) {
+                  toast("Esa herramienta ya no existe en tu lista.");
+                  return;
+                }
+                app.ir("calcular");
+              }
+            },
+            h("span", { clase: "icn" }, icono(r.forma)),
+            h(
+              "span",
+              { clase: "hinfo" },
+              h("div", { clase: "cod" }, r.codigo),
+              h("div", { clase: "d" }, detalle(r)),
+              extra.length ? h("div", { clase: "d" }, extra.join(" \xB7 ")) : null,
+              existe ? null : h("div", { clase: "d am" }, "Herramienta borrada")
+            ),
+            h("span", { clase: "r" }, h("b", {}, fmt(res.rpm)), h("div", {}, `${fmt(res.vf, 1)} mm/min`))
+          ),
+          h("button", { type: "button", clase: "quitar", "aria-label": "Compartir", onclick: () => abrirCompartir(hojaDesdeRegistro(r)) }, "\u21EA"),
+          botonConfirmar("\u2715", () => {
+            app.datos.historial = app.datos.historial.filter((x) => x.id !== r.id);
+            app.persistir();
+            vistaHistorial(raiz2);
+          }, "quitar")
+        ));
+      }
+      if (!lista.length) {
+        bloques.push(h(
+          "div",
+          { clase: "vacio" },
+          "A\xFAn no hay c\xE1lculos guardados. En Calcular, toca \u201CGuardar\u201D para dejarlos aqu\xED.",
+          h("button", { type: "button", clase: "primario", onclick: () => app.ir("calcular") }, "Ir a Calcular")
+        ));
+      } else if (!filtrados.length) {
+        bloques.push(h("p", { clase: "vacio" }, "No hay c\xE1lculos con esa b\xFAsqueda."));
+      }
+      cont.replaceChildren(...bloques);
+    };
+    raiz2.replaceChildren(...[
+      h(
+        "div",
+        { clase: "top" },
+        h("div", { clase: "logo" }, icono("plana")),
+        h("h1", {}, "CNC"),
+        lista.length ? botonConfirmar("Borrar todo", () => {
+          app.datos.historial = [];
+          app.persistir();
+          toast("Historial vac\xEDo");
+          vistaHistorial(raiz2);
+        }, "enlace-sutil") : null
+      ),
+      h("h2", {}, "Historial"),
+      h("p", { clase: "sub" }, lista.length ? "Toca un c\xE1lculo para repetirlo." : "Tus c\xE1lculos guardados, por d\xEDa."),
+      lista.length ? h("label", { clase: "buscar" }, icono("lupa"), h("input", {
+        type: "search",
+        placeholder: "Buscar por c\xF3digo o material\u2026",
+        value: texto2,
+        oninput: (e) => {
+          texto2 = e.target.value;
+          pintar();
+        }
+      })) : null,
+      cont
+    ].filter(Boolean));
+    pintar();
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/vista-calcular.js
+  var manual = {};
+  var profundidad = 0.2;
+  var corte = {};
+  var resultadoActual = null;
+  var avisosActuales = [];
+  function cargarCalculo(reg) {
+    if (!app.herramienta(reg.herramientaId)) return false;
+    const u = app.datos.ultimo;
+    u.herramienta = reg.herramientaId;
+    if (app.material(reg.materialId)) u.material = reg.materialId;
+    if (app.datos.maquinas.some((q) => q.id === reg.maquinaId)) app.datos.maquinaActiva = reg.maquinaId;
+    if (reg.estrategia) u.estrategia = reg.estrategia;
+    manual = { ...reg.manual ?? {} };
+    corte = { ...reg.corte ?? {} };
+    if (reg.resultado?.profundidad > 0) profundidad = reg.resultado.profundidad;
+    app.persistir();
+    return true;
+  }
+  var SVG2 = "http://www.w3.org/2000/svg";
+  function s(etiqueta, attrs = {}) {
+    const el = document.createElementNS(SVG2, etiqueta);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    return el;
+  }
+  function dibujoCorte(D, ae, ap, voladizo) {
+    const W = 120;
+    const H = 92;
+    const k = Math.min(26 / D, 60 / Math.max(voladizo, ap + 4, 1));
+    const ySup = 46;
+    const xFresa = 34;
+    const g = s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, "aria-hidden": "true", class: "dibujo" });
+    const anchoCorte = Math.max(2, ae * k);
+    const altoCorte = Math.max(2, ap * k);
+    const xMat = xFresa + D * k - anchoCorte;
+    g.append(s("rect", { x: xMat, y: ySup, width: W - 4 - xMat, height: H - ySup - 2, class: "d-mat" }));
+    g.append(s("rect", { x: xMat, y: ySup, width: anchoCorte, height: altoCorte, class: "d-hueco" }));
+    const largo = Math.max(voladizo, ap) * k;
+    g.append(s("rect", { x: xFresa, y: ySup + altoCorte - largo, width: D * k, height: largo, rx: 2, class: "d-fresa" }));
+    g.append(s("rect", { x: xFresa - 4, y: ySup + altoCorte - largo - 6, width: D * k + 8, height: 6, class: "d-cono" }));
+    const t1 = s("text", { x: xFresa + D * k + 4, y: ySup + altoCorte / 2 + 3, class: "d-ap" });
+    t1.textContent = `ap ${fmt(ap, 1)}`;
+    const t2 = s("text", { x: xMat + 1, y: Math.min(H - 4, ySup + altoCorte + 10), class: "d-ae" });
+    t2.textContent = `ae ${fmt(ae, 1)}`;
+    g.append(t1, t2);
+    return g;
+  }
+  function listaHerramientas(alElegir) {
+    let filtro2 = "Todas";
+    let texto3 = "";
+    abrirHoja("Elegir herramienta", (cerrar) => {
+      const cont = h("div");
+      const pintar = () => {
+        const t = texto3.toLowerCase();
+        const lista = app.datos.herramientas.filter((x) => filtro2 === "Todas" || GRUPO[x.forma] === filtro2).filter((x) => !t || `${x.codigo} ${nombreHerramienta(x)} ${x.marca}`.toLowerCase().includes(t)).sort((a, b) => b.favorita - a.favorita || a.codigo.localeCompare(b.codigo, "es", { numeric: true }));
+        cont.replaceChildren(...lista.map((x) => h(
+          "button",
+          {
+            type: "button",
+            clase: `item${x.id === app.datos.ultimo.herramienta ? " activo" : ""}`,
+            onclick: () => {
+              cerrar();
+              alElegir(x.id);
+            }
+          },
+          h("span", { clase: "icn" }, icono(x.forma)),
+          h("span", {}, h("div", { clase: "cod" }, x.codigo), h("div", { clase: "d" }, detalleHerramienta(x))),
+          x.favorita ? h("span", { clase: "der cod" }, "\u2605") : null
+        )));
+        if (!lista.length) cont.append(h("p", { clase: "vacio" }, "No hay herramientas con ese filtro."));
+      };
+      pintar();
+      return h(
+        "div",
+        {},
+        h("label", { clase: "buscar" }, icono("lupa"), h("input", { type: "search", placeholder: "Buscar por c\xF3digo o \xD8\u2026", oninput: (e) => {
+          texto3 = e.target.value;
+          pintar();
+        } })),
+        chips(["Todas", "Fresas", "Brocas", "Machos", "Insertos"].map((v) => ({ valor: v, texto: v })), filtro2, (v) => {
+          filtro2 = v;
+          pintar();
+        }),
+        cont,
+        h("button", { type: "button", clase: "btnl", onclick: () => {
+          cerrar();
+          abrirFormulario(null, (nueva) => alElegir(nueva.id));
+        } }, "+ Agregar herramienta nueva")
+      );
+    }, { cuenta: String(app.datos.herramientas.length) });
+  }
+  function listaMateriales(alElegir) {
+    let filtro2 = "todos";
+    let texto3 = "";
+    abrirHoja("Elegir material", (cerrar) => {
+      const cont = h("div");
+      const pintar = () => {
+        const t = texto3.toLowerCase();
+        const lista = app.datos.materiales.filter((m2) => filtro2 === "todos" || (filtro2 === "confirmados" ? m2.confirmado : m2.tipo === filtro2)).filter((m2) => !t || `${m2.nombre} ${m2.familia}`.toLowerCase().includes(t));
+        cont.replaceChildren(...lista.map((m2) => {
+          const punto2 = h("span", { clase: "punto" });
+          punto2.style.background = m2.color;
+          const activo = m2.id === app.datos.ultimo.material;
+          return h(
+            "button",
+            { type: "button", clase: `item${activo ? " activo" : ""}`, onclick: () => {
+              cerrar();
+              alElegir(m2.id);
+            } },
+            punto2,
+            h("span", {}, h("div", { clase: "v" }, m2.nombre), h("div", { clase: "d" }, m2.familia)),
+            h("span", { clase: "der" }, activo ? h("span", { clase: "cod" }, "\u2713") : h("span", { clase: `badge ${m2.confirmado ? "b-ok" : "b-sug"}` }, m2.confirmado ? "\u2713 Confirmado" : "Sugerido"))
+          );
+        }));
+        if (!lista.length) cont.append(h("p", { clase: "vacio" }, "No hay materiales con ese filtro."));
+      };
+      pintar();
+      return h(
+        "div",
+        {},
+        h("label", { clase: "buscar" }, icono("lupa"), h("input", { type: "search", placeholder: "Buscar material\u2026", oninput: (e) => {
+          texto3 = e.target.value;
+          pintar();
+        } })),
+        chips([{ valor: "todos", texto: "Todos" }, { valor: "plastico", texto: "Pl\xE1sticos" }, { valor: "metal", texto: "Metales" }, { valor: "confirmados", texto: "\u2605 Confirmados" }], filtro2, (v) => {
+          filtro2 = v;
+          pintar();
+        }),
+        cont,
+        h("button", { type: "button", clase: "btnl", onclick: () => {
+          cerrar();
+          abrirFormularioMaterial(null, (m2) => alElegir(m2.id));
+        } }, "+ Agregar material nuevo")
+      );
+    }, { cuenta: String(app.datos.materiales.length) });
+  }
+  function listaMaquinas(alElegir) {
+    abrirHoja("M\xE1quina", (cerrar) => h("div", {}, ...app.datos.maquinas.map((q) => h("button", {
+      type: "button",
+      clase: `item${q.id === app.datos.maquinaActiva ? " activo" : ""}`,
+      onclick: () => {
+        cerrar();
+        alElegir(q.id);
+      }
+    }, h("span", { clase: "icn" }, icono("engr")), h(
+      "span",
+      {},
+      h("div", { clase: "v" }, q.nombre),
+      h("div", { clase: "d" }, `m\xE1x ${fmt(q.rpmMax)} rpm \xB7 ${fmt(q.avanceMax)} mm/min`)
+    )))));
+  }
+  function vistaCalcular(raiz2, param = {}) {
+    const u = app.datos.ultimo;
+    if (param.herramienta && app.herramienta(param.herramienta)) {
+      u.herramienta = param.herramienta;
+      manual = {};
+      corte = {};
+      app.persistir();
+    }
+    if (!app.herramienta(u.herramienta)) u.herramienta = app.datos.herramientas[0]?.id ?? null;
+    if (!app.material(u.material)) u.material = app.datos.materiales[0]?.id;
+    const recargar = () => vistaCalcular(raiz2);
+    const elegir = (campo) => (id) => {
+      u[campo] = id;
+      manual = {};
+      if (campo === "herramienta") corte = {};
+      app.persistir();
+      recargar();
+    };
+    const maq = app.maquina();
+    const cabecera = h(
+      "div",
+      { clase: "top" },
+      h("div", { clase: "logo" }, icono("plana")),
+      h("h1", {}, "CNC"),
+      h(
+        "button",
+        { type: "button", clase: "maq", onclick: () => listaMaquinas((id) => {
+          app.datos.maquinaActiva = id;
+          app.persistir();
+          recargar();
+        }) },
+        h("i"),
+        `${maq.nombre} \u2304`
+      )
+    );
+    const herr = app.herramienta(u.herramienta);
+    const mat = app.material(u.material);
+    if (!herr) {
+      raiz2.replaceChildren(
+        cabecera,
+        h("h2", {}, "Calcular"),
+        h("p", { clase: "sub" }, "Elige herramienta y material."),
+        h(
+          "div",
+          { clase: "vacio" },
+          "A\xFAn no tienes herramientas guardadas. Agrega la primera para empezar a calcular.",
+          h("button", { type: "button", clase: "primario", onclick: () => abrirFormulario(null, (n2) => elegir("herramienta")(n2.id)) }, "+ Agregar herramienta")
+        )
+      );
+      return;
+    }
+    const f = forma(herr.forma);
+    const rosca = f.modo === "macho" ? buscarRosca(herr.rosca) : null;
+    const tarjetaHerr = h(
+      "button",
+      { type: "button", clase: "card sel", onclick: () => listaHerramientas(elegir("herramienta")) },
+      h("span", { clase: "icn" }, icono(herr.forma)),
+      h("span", {}, h("div", { clase: "k" }, `Herramienta \xB7 ${f.nombre}`), h("div", { clase: "cod" }, herr.codigo), h("div", { clase: "d" }, detalleHerramienta(herr))),
+      h("span", { clase: "chev" }, "\u2304")
+    );
+    const punto2 = h("span", { clase: "punto" });
+    punto2.style.background = mat.color;
+    const tarjetaMat = h(
+      "button",
+      { type: "button", clase: "card sel", onclick: () => listaMateriales(elegir("material")) },
+      h("span", { clase: "icn" }, punto2),
+      h("span", {}, h("div", { clase: "k" }, "Material"), h("div", { clase: "v" }, mat.nombre), h("div", { clase: "d" }, [mat.familia, REFRIGERACION[mat.refrigeracion] ?? "Aire"].filter(Boolean).join(" \xB7 "))),
+      h("span", { clase: `badge der ${mat.confirmado ? "b-ok" : "b-sug"}` }, mat.confirmado ? "\u2713 Confirmado" : "Sugerido"),
+      h("span", { clase: "chev" }, "\u2304")
+    );
+    const efectivo = h("div", { clase: "v cod" }, "\u2014");
+    const bloqueV = f.enV ? h(
+      "div",
+      { clase: "campos" },
+      h(
+        "label",
+        { clase: "campo resaltado" },
+        h("div", { clase: "k" }, "Profundidad (mm)"),
+        h("input", { type: "text", inputMode: "decimal", value: fmt(profundidad, 3), oninput: (e) => {
+          profundidad = leerNumero(e.target.value);
+          actualizar();
+        } })
+      ),
+      h("div", { clase: "campo" }, h("div", { clase: "k" }, "\xD8 efectivo"), efectivo)
+    ) : null;
+    const usaEstrategia = f.modo === "fresa" && !f.enV;
+    if (!ESTRATEGIAS[u.estrategia]) u.estrategia = "lateral";
+    const est = estrategia(u.estrategia, app.datos.opciones.rangos);
+    let tarjetaEst = null;
+    const ind = {};
+    const valoresCorte = () => {
+      const auto = corteAutomatico({
+        estrategia: u.estrategia,
+        rangos: app.datos.opciones.rangos,
+        diametro: herr.diametro,
+        largoCorte: herr.largoCorte,
+        largoTotal: herr.largoTotal,
+        voladizo: corte.voladizo ?? herr.voladizo
+      });
+      return { ae: corte.ae ?? auto.ae, ap: corte.ap ?? auto.ap, voladizo: corte.voladizo ?? auto.voladizo, auto };
+    };
+    if (usaEstrategia) {
+      const campoCorte = (clave, etiqueta) => {
+        const sub = h("span", { clase: "q" });
+        const input = h("input", {
+          type: "text",
+          inputMode: "decimal",
+          "aria-label": etiqueta,
+          oninput: (e) => {
+            const v = leerNumero(e.target.value);
+            if (Number.isFinite(v)) corte[clave] = v;
+            else delete corte[clave];
+            actualizar();
+          }
+        });
+        const marca = h("span", { clase: "marca" });
+        const caja = h("label", { clase: "campo" }, h("div", { clase: "k" }, etiqueta, marca), h("div", { clase: "fila-v" }, input, sub));
+        ind[clave] = { sub, input, caja, marca };
+        return caja;
+      };
+      const sw = h("button", {
+        type: "button",
+        clase: "sw",
+        role: "switch",
+        "aria-checked": String(app.datos.opciones.ajusteAuto),
+        "aria-label": "Ajustar avance autom\xE1ticamente",
+        onclick: () => {
+          app.datos.opciones.ajusteAuto = !app.datos.opciones.ajusteAuto;
+          sw.setAttribute("aria-checked", String(app.datos.opciones.ajusteAuto));
+          app.persistir();
+          actualizar();
+        }
+      });
+      const barraUso = (clave, titulo) => {
+        const valor = h("b");
+        const limite = h("span", { clase: "q" });
+        const relleno = h("i");
+        const tope = h("span", { clase: "tope" });
+        ind[clave] = { valor, limite, relleno, tope };
+        return h("div", { clase: "uso" }, h("div", { clase: "uso-fila" }, h("span", {}, titulo), valor), h("div", { clase: "medidor grande" }, relleno, tope), limite);
+      };
+      ind.dibujo = h("div", { clase: "dib-caja" });
+      ind.volverAuto = h("button", { type: "button", clase: "enlace", hidden: true, onclick: () => {
+        corte = {};
+        recargar();
+      } }, "\u21BA Autom\xE1tico");
+      tarjetaEst = h(
+        "div",
+        { clase: "card est" },
+        h("div", { clase: "est-top" }, h("b", {}, "Estrategia de corte"), h("span", { clase: "sw-etq" }, "Ajuste auto", sw)),
+        chips(
+          Object.keys(ESTRATEGIAS).map((k) => ({ valor: k, texto: { ranura: "Ranura", lateral: "Lateral", acabado: "Acabado", trocoidal: "Trocoidal" }[k] })),
+          u.estrategia,
+          (v) => {
+            u.estrategia = v;
+            delete corte.ae;
+            delete corte.ap;
+            app.persistir();
+            recargar();
+          }
+        ),
+        h("div", { clase: "campos c3" }, campoCorte("ae", "ae radial"), campoCorte("ap", "ap profund."), campoCorte("voladizo", "Voladizo")),
+        h(
+          "div",
+          { clase: "uso-caja" },
+          h("div", { clase: "uso-tit" }, h("b", {}, "Uso de la fresa"), ind.volverAuto),
+          h(
+            "div",
+            { clase: "dib-fila" },
+            ind.dibujo,
+            h("div", { clase: "usos" }, barraUso("usoD", "Di\xE1metro en corte"), barraUso("usoL", "Largo de corte"), barraUso("usoV", "Voladizo"))
+          )
+        )
+      );
+    }
+    const extra = usaEstrategia ? h("div", { clase: "mini" }) : null;
+    const rpmEl = h("div", { clase: "big" }, "\u2014");
+    const vfEl = h("div", { clase: "big" }, "\u2014");
+    const avisos = h("div");
+    const restablecer = h("button", { type: "button", clase: "enlace", hidden: true, onclick: () => {
+      manual = {};
+      recargar();
+    } }, "\u21BA Volver a los valores sugeridos");
+    const editable = (clave, etiqueta, unidad, decimales) => {
+      const input = h("input", {
+        type: "text",
+        inputMode: clave === "filos" ? "numeric" : "decimal",
+        "aria-label": etiqueta,
+        oninput: (e) => {
+          manual[clave] = leerNumero(e.target.value);
+          tarjeta.classList.add("editado");
+          actualizar();
+        }
+      });
+      const tarjeta = h(
+        "label",
+        { clase: `card${manual[clave] !== void 0 ? " editado" : ""}` },
+        h("div", { clase: "lbl" }, etiqueta),
+        input,
+        h("div", { clase: "lbl" }, unidad)
+      );
+      return { tarjeta, input, decimales };
+    };
+    const eVc = editable("vc", "Vc", "m/min", 0);
+    const eAv = f.modo === "macho" ? null : editable("avance", f.modo === "broca" ? "f" : "fz", f.modo === "broca" ? "mm/vuelta" : "mm/diente", 3);
+    const eFi = f.modo === "fresa" ? editable("filos", "Filos", "Z", 0) : null;
+    const fijo = (etq, valor, unidad) => h("div", { clase: "card" }, h("div", { clase: "lbl" }, etq), h("div", { clase: "v" }, valor), h("div", { clase: "lbl" }, unidad));
+    const minis = h(
+      "div",
+      { clase: "mini" },
+      eVc.tarjeta,
+      eAv ? eAv.tarjeta : fijo("Paso", fmt(rosca?.paso, 2), "mm"),
+      eFi ? eFi.tarjeta : f.modo === "macho" ? fijo("Broca previa", `\xD8${fmt(rosca?.broca, 2)}`, "mm") : fijo("\xD8 broca", fmt(herr.diametro, 2), "mm")
+    );
+    function actualizar() {
+      const lista = [];
+      try {
+        let diametro = f.modo === "macho" ? rosca.diametro : herr.diametro;
+        if (f.enV) {
+          diametro = diametroEfectivoV(herr.angulo, herr.diametroPunta, profundidad, herr.diametroToma);
+          efectivo.textContent = `${fmt(diametro, 2)} mm`;
+        }
+        const sug = sugerir(mat, herr, diametro);
+        const vc = manual.vc ?? Math.round(sug.vc);
+        const avance = manual.avance ?? (sug.avance !== null ? Math.round(sug.avance * 1e3) / 1e3 : null);
+        const filos = manual.filos ?? herr.filos;
+        if (document.activeElement !== eVc.input) eVc.input.value = fmt(vc, 1);
+        if (eAv && document.activeElement !== eAv.input) eAv.input.value = fmt(avance, 3);
+        if (eFi && document.activeElement !== eFi.input) eFi.input.value = String(filos);
+        let avanceCalc = avance;
+        let ev = null;
+        let valsUsados = null;
+        if (usaEstrategia) {
+          const vals = valoresCorte();
+          valsUsados = vals;
+          ev = evaluarFresado({
+            estrategia: u.estrategia,
+            rangos: app.datos.opciones.rangos,
+            diametro,
+            ae: vals.ae,
+            ap: vals.ap,
+            voladizo: vals.voladizo,
+            largoCorte: herr.largoCorte,
+            ajustar: app.datos.opciones.ajusteAuto
+          });
+          avanceCalc = avance * ev.factor;
+          const color = { ok: "ok", bajo: "am", alto: "am", muyAlto: "ro" };
+          for (const [clave, sub] of [["ae", `${fmt(ev.usoDiametro, 0)} %`], ["ap", ev.usoLargo !== null ? `${fmt(ev.usoLargo, 0)} % LC` : `${fmt(ev.apD, 2)}\xD7D`], ["voladizo", `${fmt(ev.relVol, 1)}\xD7D`]]) {
+            const c = ind[clave];
+            if (document.activeElement !== c.input) c.input.value = fmt(vals[clave], 1);
+            c.sub.textContent = sub;
+            const manual2 = corte[clave] !== void 0;
+            c.caja.classList.toggle("editado", manual2);
+            c.marca.textContent = manual2 ? " \xB7 manual" : clave === "voladizo" && vals.auto.voladizoEstimado ? " \xB7 estimado" : " \xB7 auto";
+          }
+          ind.volverAuto.hidden = !Object.keys(corte).length;
+          const barra = (clave, uso, max, estado, texto3, limiteTxt) => {
+            const b = ind[clave];
+            b.valor.textContent = texto3;
+            b.valor.className = color[estado];
+            b.relleno.style.width = `${Math.max(3, Math.min(100, uso))}%`;
+            b.relleno.className = color[estado];
+            b.tope.hidden = !(max > 0 && max < 100);
+            b.tope.style.left = `${Math.min(100, max)}%`;
+            b.limite.textContent = limiteTxt;
+          };
+          barra(
+            "usoD",
+            ev.usoDiametro,
+            ev.maxDiametro,
+            ev.estadoAe,
+            `${fmt(ev.usoDiametro, 0)} %`,
+            `de \xD8${fmt(diametro, 2)} \xB7 m\xE1x ${fmt(ev.maxDiametro, 0)} % en ${est.nombre.toLowerCase()}`
+          );
+          if (ev.usoLargo !== null) {
+            barra(
+              "usoL",
+              ev.usoLargo,
+              ev.maxLargo,
+              ev.estadoAp,
+              `${fmt(ev.usoLargo, 0)} %`,
+              `de ${fmt(herr.largoCorte, 1)} mm \xB7 m\xE1x ${fmt(ev.maxLargo, 0)} %`
+            );
+          } else {
+            barra("usoL", ev.apD * 50, 0, ev.estadoAp, `${fmt(ev.apD, 2)}\xD7D`, "la herramienta no tiene largo de corte guardado");
+          }
+          const estVol = ev.nivelVol === "ok" ? "ok" : ev.nivelVol === "riesgo" ? "muyAlto" : "alto";
+          barra("usoV", ev.relVol / 6 * 100, 50, estVol, `${fmt(ev.relVol, 1)}\xD7D`, "ideal \u2264 3\xD7D \xB7 sobre 5\xD7D se puede doblar");
+          ind.dibujo.replaceChildren(dibujoCorte(diametro, Math.min(vals.ae, diametro), vals.ap, vals.voladizo));
+          ev.q = caudalViruta(Math.min(vals.ae, diametro), vals.ap, 1);
+        }
+        const r = calcular({ modo: f.modo, diametro, vc, filos, avance: avanceCalc, paso: rosca?.paso, maquina: maq, opciones: app.datos.opciones });
+        if (ev) {
+          const auto = app.datos.opciones.ajusteAuto;
+          const pct = (x) => `${x >= 1 ? "+" : "\u2212"}${fmt(Math.abs(x - 1) * 100, 0)} %`;
+          extra.replaceChildren(
+            h(
+              "div",
+              { clase: "card" },
+              h("div", { clase: "lbl" }, "fz efectivo"),
+              h("div", { clase: "v" }, fmt(avanceCalc, 3)),
+              h("div", { clase: "lbl" }, auto && ev.fVF > 1.005 ? `${pct(ev.fVF)} viruta fina` : "sin ajuste")
+            ),
+            h(
+              "div",
+              { clase: "card" },
+              h("div", { clase: "lbl" }, "Voladizo"),
+              h("div", { clase: `v ${ev.nivelVol === "ok" ? "" : ev.nivelVol === "riesgo" ? "ro" : "am"}` }, ev.fVol < 1 ? pct(ev.fVol) : "OK"),
+              h("div", { clase: "lbl" }, ev.fVol < 1 ? auto ? "avance aplicado" : "sugerido" : `${fmt(ev.relVol, 1)}\xD7D`)
+            ),
+            h("div", { clase: "card" }, h("div", { clase: "lbl" }, "Q"), h("div", { clase: "v" }, fmt(ev.q * r.vf, 1)), h("div", { clase: "lbl" }, "cm\xB3/min"))
+          );
+          lista.push(...ev.avisos);
+        }
+        resultadoActual = {
+          rpm: r.rpm,
+          vf: r.vf,
+          vc,
+          avance: Math.round(avanceCalc * 1e3) / 1e3,
+          filos: f.modo === "fresa" ? filos : null,
+          diametro: Math.round(diametro * 1e3) / 1e3,
+          ae: valsUsados?.ae ?? null,
+          ap: valsUsados?.ap ?? null,
+          voladizo: valsUsados?.voladizo ?? null,
+          profundidad: f.enV ? profundidad : null
+        };
+        rpmEl.textContent = fmt(r.rpm);
+        vfEl.replaceChildren(fmt(r.vf, f.modo === "macho" ? 1 : 0), h("small", {}, "mm/min"));
+        lista.push(...r.avisos);
+        if (!mat.confirmado && !Object.keys(manual).length) lista.unshift("Valores de cat\xE1logo. Conf\xEDrmalos en tu m\xE1quina.");
+        avisosActuales = lista.filter((a) => !a.startsWith("Valores de cat\xE1logo"));
+        avisos.replaceChildren(...lista.map((a) => h("div", { clase: "aviso" }, `\u26A0 ${a}`)));
+      } catch (error) {
+        resultadoActual = null;
+        rpmEl.textContent = "\u2014";
+        vfEl.textContent = "\u2014";
+        if (f.enV) efectivo.textContent = "\u2014";
+        avisos.replaceChildren(h("div", { clase: "error" }, error instanceof ErrorCalculo ? error.message : "Revisa los datos ingresados."));
+        if (!(error instanceof ErrorCalculo)) console.error(error);
+      }
+      restablecer.hidden = !Object.keys(manual).length;
+    }
+    raiz2.replaceChildren(...[
+      cabecera,
+      h("h2", {}, "Calcular"),
+      h("p", { clase: "sub" }, f.enV ? "Se calcula con el \xD8 real a la profundidad." : "Elige herramienta y material."),
+      tarjetaHerr,
+      tarjetaMat,
+      bloqueV,
+      tarjetaEst,
+      h(
+        "div",
+        { clase: "res" },
+        h("div", { clase: "card" }, h("div", { clase: "lbl" }, "RPM"), rpmEl),
+        h("div", { clase: "card" }, h("div", { clase: "lbl" }, "Avance"), vfEl)
+      ),
+      minis,
+      extra,
+      restablecer,
+      avisos,
+      h(
+        "div",
+        { clase: "btn2" },
+        h("button", { type: "button", onclick: () => {
+          if (!resultadoActual) {
+            toast("Corrige los datos antes de guardar.");
+            return;
+          }
+          guardarEnHistorial({ herr, mat, maq, estrategia: usaEstrategia ? u.estrategia : null, manual, corte, resultado: resultadoActual });
+          toast("Guardado en el historial");
+        } }, "Guardar"),
+        h("button", { type: "button", clase: "ll", onclick: () => {
+          if (!resultadoActual) {
+            toast("Corrige los datos antes de compartir.");
+            return;
+          }
+          const reg = crearRegistro({ herr, mat, maq, estrategia: usaEstrategia ? u.estrategia : null, manual, corte, resultado: resultadoActual });
+          if (reg) abrirCompartir(hojaDesdeRegistro(reg, avisosActuales));
+        } }, "Compartir")
+      )
+    ].filter(Boolean));
+    actualizar();
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/exportar.js
+  var ANCHO2 = 1240;
+  var ALTO2 = 1754;
+  var M = 80;
+  var TINTA2 = "#151812";
+  var GRIS2 = "#6b7264";
+  var LINEA2 = "#dde2d3";
+  var LIMA2 = "#c8e05a";
+  var fuente = (peso, tam) => `${peso} ${tam}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  function paginar(secciones) {
+    const paginas = [];
+    let ctx;
+    let y;
+    const nueva = () => {
+      const c = document.createElement("canvas");
+      c.width = ANCHO2;
+      c.height = ALTO2;
+      ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, ANCHO2, ALTO2);
+      ctx.fillStyle = LIMA2;
+      ctx.fillRect(0, 0, ANCHO2, 14);
+      ctx.fillStyle = TINTA2;
+      ctx.font = fuente(800, 40);
+      ctx.fillText("CNC \xB7 Cat\xE1logo del taller", M, 90);
+      ctx.fillStyle = GRIS2;
+      ctx.font = fuente(400, 24);
+      ctx.fillText((/* @__PURE__ */ new Date()).toLocaleDateString("es-CL", { dateStyle: "long" }), M, 128);
+      paginas.push(c);
+      y = 190;
+    };
+    const cabecera = (s2) => {
+      ctx.fillStyle = TINTA2;
+      ctx.font = fuente(800, 32);
+      ctx.fillText(s2.titulo, M, y);
+      y += 46;
+      ctx.fillStyle = GRIS2;
+      ctx.font = fuente(600, 20);
+      for (const col of s2.columnas) texto3(col.t, col);
+      y += 14;
+      ctx.strokeStyle = TINTA2;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(M, y);
+      ctx.lineTo(ANCHO2 - M, y);
+      ctx.stroke();
+      y += 34;
+    };
+    const texto3 = (t, col) => {
+      const w = ctx.measureText(t).width;
+      ctx.fillText(t, col.der ? M + col.x - w : M + col.x, y);
+    };
+    nueva();
+    for (const s2 of secciones) {
+      if (y > ALTO2 - 260) nueva();
+      cabecera(s2);
+      for (const fila2 of s2.filas) {
+        if (y > ALTO2 - 100) {
+          nueva();
+          cabecera({ ...s2, titulo: `${s2.titulo} (continuaci\xF3n)` });
+        }
+        ctx.font = fuente(500, 22);
+        ctx.fillStyle = TINTA2;
+        fila2.forEach((t, i) => {
+          const col = s2.columnas[i];
+          const lim = (s2.columnas[i + 1]?.x ?? ANCHO2 - M * 2 + 10) - col.x - 16;
+          let v = String(t ?? "");
+          while (!col.der && ctx.measureText(v).width > lim && v.length > 2) v = `${v.slice(0, -2)}\u2026`;
+          texto3(v, col);
+        });
+        y += 14;
+        ctx.strokeStyle = LINEA2;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(M, y);
+        ctx.lineTo(ANCHO2 - M, y);
+        ctx.stroke();
+        y += 34;
+      }
+      y += 40;
+    }
+    paginas.forEach((c, i) => {
+      const x = c.getContext("2d");
+      x.fillStyle = GRIS2;
+      x.font = fuente(400, 20);
+      x.fillText(`P\xE1gina ${i + 1} de ${paginas.length}`, ANCHO2 - M - 150, ALTO2 - 50);
+    });
+    return paginas;
+  }
+  async function catalogoPdf(datos2) {
+    const herramientas = [...datos2.herramientas].sort((a, b) => a.forma.localeCompare(b.forma) || a.codigo.localeCompare(b.codigo, "es", { numeric: true }));
+    const materiales = [...datos2.materiales].sort((a, b) => a.tipo.localeCompare(b.tipo) || a.nombre.localeCompare(b.nombre, "es"));
+    const secciones = [
+      {
+        titulo: `Herramientas (${herramientas.length})`,
+        columnas: [{ t: "C\xF3digo", x: 0 }, { t: "Forma", x: 470 }, { t: "Material", x: 650 }, { t: "Marca", x: 820 }, { t: "Voladizo", x: 1080, der: true }],
+        filas: herramientas.map((x) => [
+          x.codigo,
+          forma(x.forma).nombre,
+          MATERIALES_HERRAMIENTA[x.materialHerramienta]?.nombre ?? "",
+          x.marca || "\u2014",
+          x.voladizo > 0 ? `${fmt(x.voladizo, 1)} mm` : "\u2014"
+        ])
+      },
+      {
+        titulo: `Materiales (${materiales.length})`,
+        columnas: [
+          { t: "Material", x: 0 },
+          { t: "Vc fresa", x: 410, der: true },
+          { t: "fz \xD810", x: 540, der: true },
+          { t: "Vc broca", x: 680, der: true },
+          { t: "f \xD810", x: 800, der: true },
+          { t: "Vc macho", x: 940, der: true },
+          { t: "Estado", x: 970 }
+        ],
+        filas: materiales.map((m2) => [
+          `${m2.nombre} \xB7 ${REFRIGERACION[m2.refrigeracion] ?? "Aire"}`,
+          fmt(m2.vcFresa),
+          fmt(m2.fz10, 3),
+          fmt(m2.vcBroca),
+          fmt(m2.f10, 3),
+          fmt(m2.vcMacho),
+          m2.confirmado ? "Confirmado" : "Sugerido"
+        ])
+      }
+    ];
+    const paginas = [];
+    for (const c of paginar(secciones)) {
+      const { bytes } = await jpegDeCanvas(c);
+      paginas.push({ bytes, ancho: c.width, alto: c.height });
+    }
+    return pdfDesdeJpegs(paginas);
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/vista-ajustes.js
+  var VERSION_APP = "0.6.0";
+  var PASOS_REDONDEO = [1, 5, 10, 50, 100];
+  var fila = (ico, titulo, valor, accion, clase = "") => h(
+    "button",
+    { type: "button", clase: `aj-fila ${clase}`, onclick: accion },
+    h("span", { clase: "aj-ico" }, ico),
+    h("span", { clase: "aj-tit" }, titulo),
+    h("span", { clase: "r" }, valor ?? ""),
+    h("span", { clase: "chev" }, "\u203A")
+  );
+  var campoNum = (etq, valor, alCambiar, op = {}) => h(
+    "label",
+    { clase: "campo" },
+    h("div", { clase: "k" }, etq),
+    h("input", {
+      type: "text",
+      inputMode: op.entero ? "numeric" : "decimal",
+      value: valor === void 0 || valor === null ? "" : fmt(valor, 3),
+      oninput: (e) => alCambiar(leerNumero(e.target.value))
+    })
+  );
+  function editarMaquina(q, refrescar) {
+    const nueva = !q;
+    const b = q ? { ...q } : { id: nuevoId("q"), nombre: "", rpmMax: 6e3, avanceMax: 5e3 };
+    abrirHoja(nueva ? "Nueva m\xE1quina" : `Editar ${q.nombre}`, (cerrar) => {
+      const error = h("div", { clase: "error", hidden: true });
+      const guardarMaq = () => {
+        const nombre = String(b.nombre ?? "").trim().slice(0, 40);
+        if (!nombre) {
+          error.textContent = "Escribe un nombre para la m\xE1quina.";
+          error.hidden = false;
+          return;
+        }
+        if (!(b.rpmMax >= 100 && b.rpmMax <= 6e4)) {
+          error.textContent = "RPM m\xE1ximas: entre 100 y 60.000.";
+          error.hidden = false;
+          return;
+        }
+        if (!(b.avanceMax >= 10 && b.avanceMax <= 1e5)) {
+          error.textContent = "Avance m\xE1ximo: entre 10 y 100.000 mm/min.";
+          error.hidden = false;
+          return;
+        }
+        const limpia = { id: b.id, nombre, rpmMax: Math.round(b.rpmMax), avanceMax: Math.round(b.avanceMax) };
+        const i = app.datos.maquinas.findIndex((x) => x.id === limpia.id);
+        if (i >= 0) app.datos.maquinas[i] = limpia;
+        else app.datos.maquinas.push(limpia);
+        app.persistir();
+        cerrar();
+        toast("M\xE1quina guardada");
+        refrescar();
+      };
+      return h(
+        "div",
+        {},
+        h(
+          "label",
+          { clase: "campo" },
+          h("div", { clase: "k" }, "Nombre"),
+          h("input", { type: "text", maxLength: 40, value: b.nombre, placeholder: "Ej: Router CNC", oninput: (e) => {
+            b.nombre = e.target.value;
+          } })
+        ),
+        h(
+          "div",
+          { clase: "campos" },
+          campoNum("RPM m\xE1ximas", b.rpmMax, (v) => {
+            b.rpmMax = v;
+          }, { entero: true }),
+          campoNum("Avance m\xE1x (mm/min)", b.avanceMax, (v) => {
+            b.avanceMax = v;
+          }, { entero: true })
+        ),
+        error,
+        h("button", { type: "button", clase: "primario", onclick: guardarMaq }, "Guardar m\xE1quina"),
+        !nueva && app.datos.maquinas.length > 1 ? botonConfirmar("Borrar esta m\xE1quina", () => {
+          app.datos.maquinas = app.datos.maquinas.filter((x) => x.id !== q.id);
+          if (app.datos.maquinaActiva === q.id) app.datos.maquinaActiva = app.datos.maquinas[0].id;
+          app.persistir();
+          cerrar();
+          toast("M\xE1quina borrada");
+          refrescar();
+        }, "btn-peligro") : null
+      );
+    });
+  }
+  function editarMargen(refrescar) {
+    abrirHoja("Margen de seguridad", (cerrar) => {
+      let valor = app.datos.opciones.margen;
+      const aplicar = () => {
+        if (!(valor >= 0 && valor <= 50)) {
+          toast("Usa un valor entre 0 y 50 %.");
+          return;
+        }
+        app.datos.opciones.margen = valor;
+        app.persistir();
+        cerrar();
+        refrescar();
+      };
+      return h(
+        "div",
+        {},
+        h("p", { clase: "sub" }, "Baja las RPM y el avance de todos los c\xE1lculos en este porcentaje. \xDAtil para partir conservador con un material nuevo."),
+        chips([0, 5, 10, 15, 20].map((v) => ({ valor: String(v), texto: `${v} %` })), String(valor), (v) => {
+          valor = Number(v);
+          aplicar();
+        }),
+        campoNum("Otro valor (%)", valor, (v) => {
+          valor = v;
+        }),
+        h("button", { type: "button", clase: "primario", onclick: aplicar }, "Aplicar")
+      );
+    });
+  }
+  function editarRedondeo(clave, titulo, unidad, refrescar) {
+    abrirHoja(titulo, (cerrar) => h(
+      "div",
+      {},
+      h("p", { clase: "sub" }, `Los resultados se redondean al m\xFAltiplo m\xE1s cercano. Ej: con 10, 9.549 ${unidad} queda en 9.550.`),
+      chips(
+        PASOS_REDONDEO.map((v) => ({ valor: String(v), texto: v === 1 ? "Sin redondeo" : String(v) })),
+        String(app.datos.opciones[clave]),
+        (v) => {
+          app.datos.opciones[clave] = Number(v);
+          app.persistir();
+          cerrar();
+          refrescar();
+        }
+      )
+    ));
+  }
+  function editarRangos(refrescar) {
+    abrirHoja("Rangos de corte", (cerrar) => {
+      const borrador = JSON.parse(JSON.stringify(app.datos.opciones.rangos ?? {}));
+      const error = h("div", { clase: "error", hidden: true });
+      const bloques = Object.entries(ESTRATEGIAS).map(([id, e]) => {
+        const actual = { ae: borrador[id]?.ae ?? e.ae, ap: borrador[id]?.ap ?? e.ap };
+        const set = (k, i) => (v) => {
+          borrador[id] = borrador[id] ?? {};
+          borrador[id][k] = [...borrador[id][k] ?? actual[k]];
+          borrador[id][k][i] = v;
+        };
+        return h(
+          "div",
+          { clase: "rango" },
+          h("div", { clase: "sec" }, e.nombre, h("span", { clase: "q" }, ` \xB7 cat\xE1logo: ae ${e.ae.join("\u2013")} %, ap ${e.ap.map((v) => fmt(v, 2)).join("\u2013")}\xD7D`)),
+          h(
+            "div",
+            { clase: "campos c4" },
+            campoNum("ae m\xEDn %", actual.ae[0], set("ae", 0)),
+            campoNum("ae m\xE1x %", actual.ae[1], set("ae", 1)),
+            campoNum("ap m\xEDn \xD7D", actual.ap[0], set("ap", 0)),
+            campoNum("ap m\xE1x \xD7D", actual.ap[1], set("ap", 1))
+          )
+        );
+      });
+      const guardarRangos = () => {
+        for (const [id, r] of Object.entries(borrador)) {
+          for (const [k, max] of [["ae", 100], ["ap", 10]]) {
+            if (!r[k]) continue;
+            const [a, b] = r[k];
+            if (!(Number.isFinite(a) && Number.isFinite(b) && a >= 0 && b <= max && a <= b)) {
+              error.textContent = `${ESTRATEGIAS[id].nombre}: revisa ${k} (m\xEDnimo \u2264 m\xE1ximo, ${k === "ae" ? "hasta 100 %" : "hasta 10\xD7D"}).`;
+              error.hidden = false;
+              return;
+            }
+          }
+        }
+        app.datos.opciones.rangos = borrador;
+        app.persistir();
+        cerrar();
+        toast("Rangos guardados");
+        refrescar();
+      };
+      return h(
+        "div",
+        {},
+        h("p", { clase: "sub" }, "ae en % del di\xE1metro y ap en m\xFAltiplos del di\xE1metro (\xD7D). La app usa estos l\xEDmites para las barras y advertencias."),
+        ...bloques,
+        error,
+        h("button", { type: "button", clase: "primario", onclick: guardarRangos }, "Guardar rangos"),
+        botonConfirmar("\u21BA Volver a los rangos de cat\xE1logo", () => {
+          app.datos.opciones.rangos = {};
+          app.persistir();
+          cerrar();
+          toast("Rangos de cat\xE1logo restaurados");
+          refrescar();
+        }, "enlace")
+      );
+    });
+  }
+  function abrirRespaldo(refrescar) {
+    abrirHoja("Respaldo del cat\xE1logo", (cerrar) => {
+      const fecha = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      const cargar2 = async (e) => {
+        const archivo = e.target.files?.[0];
+        e.target.value = "";
+        if (!archivo) return;
+        try {
+          const datos2 = leerRespaldo(await archivo.text());
+          app.datos = datos2;
+          app.persistir();
+          cerrar();
+          toast(`Respaldo cargado: ${datos2.herramientas.length} herramientas, ${datos2.materiales.length} materiales`);
+          refrescar();
+        } catch (err) {
+          toast(err instanceof ErrorDatos ? err.message : "No se pudo leer el archivo.");
+        }
+      };
+      return h(
+        "div",
+        {},
+        h("p", { clase: "sub" }, "Guarda en un archivo tus herramientas, materiales, m\xE1quinas, ajustes e historial. Sirve para no perder nada al cambiar de celular o para pas\xE1rselo a un operario. Las fotos no se incluyen."),
+        h(
+          "button",
+          { type: "button", clase: "op", onclick: () => compartirArchivo(new Blob([respaldoJson(app.datos)], { type: "application/json" }), `CNC_respaldo_${fecha}.json`, "Respaldo CNC") },
+          h("span", { clase: "ic lima" }, "\u21E9"),
+          h("span", {}, "Guardar respaldo", h("small", {}, "Crea el archivo y te deja enviarlo o guardarlo"))
+        ),
+        h(
+          "label",
+          { clase: "op" },
+          h("span", { clase: "ic gris" }, "\u21E7"),
+          h("span", {}, "Cargar respaldo", h("small", {}, "Reemplaza los datos de este celular por los del archivo")),
+          h("input", { type: "file", accept: "application/json,.json", hidden: true, onchange: cargar2 })
+        )
+      );
+    });
+  }
+  async function exportarCatalogo() {
+    toast("Preparando el PDF\u2026");
+    try {
+      const pdf = await catalogoPdf(app.datos);
+      await compartirArchivo(pdf, `CNC_catalogo_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.pdf`, "Cat\xE1logo CNC");
+    } catch (error) {
+      console.error(error);
+      toast("No se pudo crear el PDF del cat\xE1logo.");
+    }
+  }
+  function restaurarApp() {
+    abrirHoja("Restaurar app", (cerrar) => h(
+      "div",
+      {},
+      h("div", { clase: "avm" }, h("b", {}, "Se borrar\xE1 todo lo de este celular: "), "herramientas, fotos, cambios en materiales, m\xE1quinas, ajustes e historial. La app vuelve a como ven\xEDa al instalarla."),
+      h("p", { clase: "sub" }, 'Si quieres conservar algo, primero usa "Respaldo del cat\xE1logo".'),
+      botonConfirmar("Borrar todo y restaurar", async () => {
+        borrarDatos();
+        await borrarTodasLasFotos();
+        cerrar();
+        location.reload();
+      }, "btn-peligro lleno")
+    ));
+  }
+  function vistaAjustes(raiz2) {
+    const refrescar = () => vistaAjustes(raiz2);
+    const o = app.datos.opciones;
+    const sw = h("button", {
+      type: "button",
+      clase: "sw",
+      role: "switch",
+      "aria-checked": String(o.ajusteAuto),
+      "aria-label": "Ajuste autom\xE1tico del avance",
+      onclick: (e) => {
+        e.stopPropagation();
+        o.ajusteAuto = !o.ajusteAuto;
+        app.persistir();
+        sw.setAttribute("aria-checked", String(o.ajusteAuto));
+      }
+    });
+    const rangosPropios = Object.keys(o.rangos ?? {}).length;
+    raiz2.replaceChildren(
+      h("div", { clase: "top" }, h("div", { clase: "logo" }, icono("plana")), h("h1", {}, "CNC")),
+      h("h2", {}, "Ajustes"),
+      h("div", { clase: "ajt" }, "M\xE1quinas"),
+      h(
+        "div",
+        { clase: "aj" },
+        ...app.datos.maquinas.map((q) => fila(
+          h("i", { clase: `pto${q.id === app.datos.maquinaActiva ? " on" : ""}` }),
+          q.nombre,
+          `${fmt(q.rpmMax)} rpm \xB7 ${fmt(q.avanceMax)} mm/min`,
+          () => editarMaquina(q, refrescar)
+        )),
+        fila("+", h("span", { clase: "ok" }, "Agregar m\xE1quina"), "", () => editarMaquina(null, refrescar))
+      ),
+      h("div", { clase: "ajt" }, "C\xE1lculo"),
+      h(
+        "div",
+        { clase: "aj" },
+        fila("%", "Margen de seguridad", o.margen ? `\u2212${fmt(o.margen, 1)} %` : "Sin margen", () => editarMargen(refrescar)),
+        fila("\u2248", "Redondear RPM a", o.redondeoRpm === 1 ? "Sin redondeo" : String(o.redondeoRpm), () => editarRedondeo("redondeoRpm", "Redondear RPM", "RPM", refrescar)),
+        fila("\u2248", "Redondear avance a", o.redondeoAvance === 1 ? "Sin redondeo" : String(o.redondeoAvance), () => editarRedondeo("redondeoAvance", "Redondear avance", "mm/min", refrescar)),
+        fila("\u21C4", "Rangos de ae / ap", rangosPropios ? "Del taller" : "Cat\xE1logo", () => editarRangos(refrescar)),
+        h(
+          "div",
+          { clase: "aj-fila" },
+          h("span", { clase: "aj-ico" }, "A"),
+          h("span", { clase: "aj-tit" }, "Ajuste auto del avance", h("small", {}, "Viruta fina y voladizo")),
+          sw
+        )
+      ),
+      h("div", { clase: "ajt" }, "Datos"),
+      h(
+        "div",
+        { clase: "aj" },
+        fila("\u21E9", "Respaldo del cat\xE1logo", "Guardar / cargar", () => abrirRespaldo(refrescar)),
+        fila("\u21EA", "Exportar cat\xE1logo", "PDF", exportarCatalogo),
+        fila("\u21BA", h("span", { clase: "ro" }, "Restaurar app"), "", restaurarApp)
+      ),
+      h("p", { clase: "version" }, `CNC \xB7 versi\xF3n ${VERSION_APP}`)
+    );
+  }
+
+  // ../../../home/claude/cnc-app/js/ui/app.js
+  var raiz = document.getElementById("vista");
+  var VISTAS = {
+    calcular: { pintar: vistaCalcular, pestana: "calcular" },
+    herramientas: { pintar: vistaHerramientas, pestana: "herramientas" },
+    ficha: { pintar: vistaFicha, pestana: "herramientas" },
+    materiales: { pintar: vistaMateriales, pestana: "materiales" },
+    fichaMaterial: { pintar: vistaFichaMaterial, pestana: "materiales" },
+    historial: { pintar: vistaHistorial, pestana: "historial" },
+    ajustes: { pintar: vistaAjustes, pestana: "ajustes" }
+  };
+  app.ir = (nombre, param) => {
+    const v = VISTAS[nombre] ?? VISTAS.calcular;
+    try {
+      v.pintar(raiz, param);
+    } catch (error) {
+      console.error(`Error al mostrar "${nombre}":`, error);
+      raiz.replaceChildren(h("div", { clase: "error" }, "Ocurri\xF3 un error al mostrar esta pantalla."));
+    }
+    for (const b of document.querySelectorAll(".nav [data-ir]")) {
+      if (b.dataset.ir === v.pestana) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    }
+    window.scrollTo(0, 0);
+  };
+  document.querySelector(".nav").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ir]");
+    if (b) app.ir(b.dataset.ir);
+  });
+  app.ir("calcular");
+  if (app.avisoCarga) toast(app.avisoCarga);
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch((e) => console.warn("Modo sin conexi\xF3n no disponible:", e));
+  }
+})();
+
+</script>
+</body>
+</html>
