@@ -2,7 +2,7 @@
  * Service worker: guarda la app en el celular para usarla sin internet.
  * Al publicar una versión nueva, sube VERSION para que los celulares se actualicen.
  */
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const CACHE = `cnc-${VERSION}`;
 const ARCHIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
