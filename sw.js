@@ -2,7 +2,7 @@
  * Service worker: guarda la app en el celular para usarla sin internet.
  * Al publicar una versión nueva, sube VERSION para que los celulares se actualicen.
  */
-const VERSION = '1.1.1';
+const VERSION = '1.2.0';
 const CACHE = `cnc-${VERSION}`;
 const ARCHIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
@@ -19,8 +19,10 @@ self.addEventListener('activate', (e) => {
 // Primero la red (para recibir actualizaciones); sin conexión, la copia guardada.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== self.location.origin) return;
+  // La página se pide siempre revalidando con el servidor, para no quedar con una versión vieja.
+  const pedido = e.request.mode === 'navigate' ? fetch(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }) : fetch(e.request);
   e.respondWith(
-    fetch(e.request)
+    pedido
       .then((r) => { const copia = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copia)).catch(() => {}); return r; })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html'))),
   );
